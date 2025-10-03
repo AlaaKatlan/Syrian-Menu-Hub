@@ -1,37 +1,31 @@
 <!-- shared/header/header.component.html (محدث) -->
-<header
-    [class]="isScrolled() ?
+<header [class]="isScrolled() ?
     'bg-white/95 backdrop-blur-xl shadow-2xl border-b border-gray-100/50' :
-    'bg-transparent'"
-    class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out">
+    'bg-transparent'" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out">
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-20">
-            <!-- الشعار مع فونت Cookie -->
-            <a
-                routerLink="/"
-                class="flex items-center space-x-3 space-x-reverse group"
-                [class.scale-95]="isScrolled()">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-20">
+      <!-- الشعار مع فونت Cookie -->
+      <a routerLink="/" class="flex items-center space-x-3 space-x-reverse group" [class.scale-95]="isScrolled()">
 
-                <!-- اللوغو -->
-                <div class="relative">
-                    <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-2xl group-hover:shadow-3xl transition-all duration-500 transform group-hover:scale-110 overflow-hidden border-2 border-teal-100">
-                        <img
-                            [src]="getLogoPath()"
-                            alt="Syrian Menu Hub Logo"
-                            class="w-10 h-10 object-contain transform group-hover:scale-105 transition-transform duration-300">
-                    </div>
-                </div>
+        <!-- اللوغو -->
+        <div class="relative">
+          <div
+            class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-2xl group-hover:shadow-3xl transition-all duration-500 transform group-hover:scale-110 overflow-hidden border-2 border-teal-100">
+            <img [src]="getLogoPath()" alt="Syrian Menu Hub Logo"
+              class="w-10 h-10 object-contain transform group-hover:scale-105 transition-transform duration-300">
+          </div>
+        </div>
 
-                <!-- النص مع فونت Cookie -->
-                <div class="flex flex-col">
-                    <span class="text-2xl font-cookie text-gray-900 group-hover:text-teal-700 transition-colors duration-300"
-                    style="color: #422511; ">
-                        Syrian Menu Hub
-                    </span>
-                    <span class="text-xs text-gray-500 font-medium font-sans">دليلك لمطاعم سوريا</span>
-                </div>
-            </a>
+        <!-- النص مع فونت Cookie -->
+        <div class="flex flex-col">
+          <span class="text-2xl font-cookie text-gray-900 group-hover:text-teal-700 transition-colors duration-300"
+            style="color: #422511; ">
+            Syrian Menu Hub
+          </span>
+          <span class="text-xs text-gray-500 font-medium font-sans">دليلك لمطاعم سوريا</span>
+        </div>
+      </a>
 
       <!-- قائمة التنقل للشاشات الكبيرة -->
       <nav class="hidden lg:flex items-center space-x-8 space-x-reverse">
@@ -87,15 +81,23 @@
       <div class="p-6 space-y-4">
         <a (click)="navigateTo('/')"
           class="block text-lg font-semibold text-gray-800 hover:text-teal-600 transition-colors duration-300 cursor-pointer">
-          🏠 الرئيسية
+          <img width="24" height="24" src="https://img.icons8.com/office/40/home--v1.png" alt="home--v1"
+            style="display: inline;" />
+          الرئيسية
         </a>
         <a (click)="navigateTo('/')"
           class="block text-lg font-semibold text-gray-800 hover:text-teal-600 transition-colors duration-300 cursor-pointer">
-          🍽️ المطاعم
+          <img width="24" height="24" src="https://img.icons8.com/3d-fluency/94/tableware.png" alt="tableware"
+            style="display: inline;" />
+
+          المطاعم
         </a>
         <a (click)="navigateTo('/')"
           class="block text-lg font-semibold text-gray-800 hover:text-teal-600 transition-colors duration-300 cursor-pointer">
-          ℹ️ من نحن
+          <img width="24" height="24" src="https://img.icons8.com/flat-round/64/info.png" alt="info"
+            style="display: inline;" />
+
+          من نحن
         </a>
       </div>
     </div>
