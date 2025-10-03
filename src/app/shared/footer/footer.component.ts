@@ -1,0 +1,20 @@
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-footer',
+  standalone: true,
+  imports: [],
+  template: `
+    <footer class="bg-gray-800 text-white mt-16">
+      <div class="container mx-auto py-8 px-4 text-center">
+        <p>&copy; {{ currentYear }} Syrian Menu Hub. كل الحقوق محفوظة.</p>
+        <p class="text-gray-400 text-sm mt-2">
+          تم تطويره بحب لمجتمعنا 🇸🇾
+        </p>
+      </div>
+    </footer>
+  `
+})
+export class FooterComponent {
+  currentYear = new Date().getFullYear();
+}

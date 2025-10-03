@@ -1,0 +1,41 @@
+Folder PATH listing for volume My Files
+Volume serial number is 0047-84D1
+D:.
+³   index.html
+³   main.ts
+³   structure.txt
+³   styles.scss
+³   
+ÀÄÄÄapp
+    ³   app.component.html
+    ³   app.component.scss
+    ³   app.component.spec.ts
+    ³   app.component.ts
+    ³   app.config.ts
+    ³   app.routes.ts
+    ³   
+    ÃÄÄÄmodels
+    ³       restaurant.model.ts
+    ³       
+    ÃÄÄÄpages
+    ³   ³   restaurant.rar
+    ³   ³   
+    ³   ÃÄÄÄhome
+    ³   ³       home.component.html
+    ³   ³       home.component.scss
+    ³   ³       home.component.ts
+    ³   ³       
+    ³   ÀÄÄÄrestaurant
+    ³           restaurant.component.html
+    ³           restaurant.component.scss
+    ³           restaurant.component.ts
+    ³           
+    ÃÄÄÄservices
+    ³       firestore.service.ts
+    ³       
+    ÀÄÄÄshared
+        ÀÄÄÄfooter
+                footer.component.html
+                footer.component.scss
+                footer.component.ts
+                

@@ -1,0 +1,86 @@
+/* Filter Buttons Styling */
+.filter-btn {
+  @apply px-5 py-2 text-sm font-medium text-gray-600 bg-white rounded-full shadow-sm transition-all duration-300;
+  @apply hover:bg-gray-100 hover:text-gray-900;
+}
+
+.active-filter {
+  @apply bg-orange-500 text-white shadow-lg;
+  @apply hover:bg-orange-600;
+}
+
+/* Loading Spinner Animation */
+.loader {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 5px solid #f3f3f3; /* Light grey */
+  border-top: 5px solid var(--primary-color); /* Orange */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Background Pattern */
+.pattern-bg {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+/* Filter Buttons Styling */
+.filter-btn {
+  @apply px-5 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-full shadow-sm transition-all duration-300;
+  @apply hover:bg-gray-100 hover:text-gray-800 hover:border-gray-300;
+}
+
+.active-filter {
+  @apply bg-teal-600 text-white border-teal-600 shadow-lg;
+  @apply hover:bg-teal-700 hover:border-teal-700;
+}
+
+/* Loading Spinner Animation */
+.loader {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Social & Contact Links in Header */
+.social-link {
+  @apply flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300;
+}
+
+/* Filter Buttons Styling */
+.filter-btn {
+  @apply px-5 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-full shadow-sm transition-all duration-300;
+  @apply hover:bg-gray-100 hover:text-gray-800 hover:border-gray-300;
+}
+
+.active-filter {
+  @apply bg-teal-600 text-white border-teal-600 shadow-lg;
+  @apply hover:bg-teal-700 hover:border-teal-700;
+}
+
+/* Loading Spinner Animation */
+.loader {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
