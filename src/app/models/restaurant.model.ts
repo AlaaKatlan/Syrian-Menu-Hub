@@ -1,6 +1,6 @@
 export interface RestaurantDetails {
   id: string;
-  name: string;
+  restaurantName: string;
   address: string;
   logoURL: string;
   phone?: string;

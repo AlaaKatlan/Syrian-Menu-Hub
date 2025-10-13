@@ -93,7 +93,7 @@ export class HomeComponent implements OnInit {
       }
 
       const filtered = allRestaurants.filter(r => {
-        const nameMatch = r.name?.toLowerCase().includes(term);
+        const nameMatch = r.restaurantName?.toLowerCase().includes(term);
         const addressMatch = r.address?.toLowerCase().includes(term);
         const categoryMatch = r.category?.toLowerCase().includes(term);
 

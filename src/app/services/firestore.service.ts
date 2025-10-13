@@ -12,7 +12,7 @@ import {
 } from '@angular/fire/firestore';
 import { Observable, from, forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { RestaurantDetails, RestaurantMenu, CombinedRestaurantData } from '../models/restaurant.model';
+import { RestaurantDetails, RestaurantMenu, CombinedRestaurantData, MenuItem } from '../models/restaurant.model';
 
 @Injectable({
   providedIn: 'root'
@@ -22,7 +22,7 @@ export class FirestoreService {
 
   getAllRestaurants(): Observable<RestaurantDetails[]> {
     const restaurantsCol = collection(this.firestore, 'restaurants');
-    const q = query(restaurantsCol, orderBy('name'));
+    const q = query(restaurantsCol, orderBy('restaurantName'));
 
     return from(getDocs(q)).pipe(
       map(snapshot => {
@@ -34,7 +34,7 @@ export class FirestoreService {
 
           return {
             id: doc.id,
-            name: data['name'] || 'بدون اسم',
+            restaurantName: data['restaurantName'] || 'بدون اسم',
             address: data['address'] || 'سوريا',
             logoURL: data['logoURL'] || '',
             category: data['category'] || 'مطعم سوري',
@@ -71,10 +71,11 @@ export class FirestoreService {
       map(snap => {
         if (snap.exists()) {
           const data = snap.data();
+
           console.log('✅ بيانات المطعم موجودة:', data);
           return {
             id: snap.id,
-            name: data['name'] || 'بدون اسم',
+            restaurantName: data['restaurantName'] || 'بدون اسم',
             address: data['address'] || 'سوريا',
             logoURL: data['logoURL'] || '',
             category: data['category'] || 'مطعم سوري',
@@ -100,10 +101,15 @@ export class FirestoreService {
       map(snap => {
         if (snap.exists()) {
           const data = snap.data();
+
+          // نقوم بفلترة مصفوفة "items"
+          const visibleItems = (data['items'] as MenuItem[] || []).filter(item => item.show === true);
+
+          console.log(`✅ قائمة الطعام موجودة، العناصر المعروضة: ${visibleItems.length}`);
           console.log('✅ قائمة الطعام موجودة:', data);
           return {
             categories: data['categories'] || [],
-            items: data['items'] || []
+            items: visibleItems // نستخدم المصفوفة المفلترة
           } as RestaurantMenu;
         } else {
           console.log('❌ قائمة الطعام غير موجودة');
@@ -119,7 +125,7 @@ export class FirestoreService {
     return forkJoin({ details: details$, menu: menu$ }).pipe(
       map(result => {
         if (result.details && result.menu) {
-          console.log('✅ بيانات كاملة للمطعم:', result.details.name);
+          console.log('✅ بيانات كاملة للمطعم:', result.details.restaurantName);
           return result as CombinedRestaurantData;
         } else {
           console.error('❌ بيانات ناقصة للمطعم:', {

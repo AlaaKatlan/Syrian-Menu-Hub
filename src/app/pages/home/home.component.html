@@ -222,11 +222,11 @@
               @if (restaurant.logoURL) {
                 <img alt=""
                   [src]="getImageURL(restaurant.logoURL)"
-                  [alt]="restaurant.name + ' Logo'"
+                  [alt]="restaurant.restaurantName + ' Logo'"
                   class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out" />
               } @else {
                 <div class="w-full h-full bg-gradient-to-br from-teal-100 to-amber-100 flex items-center justify-center">
-                  <span class="text-6xl font-black text-teal-300">{{ restaurant.name?.charAt(0) || 'م' }}</span>
+                  <span class="text-6xl font-black text-teal-300">{{ restaurant.restaurantName.charAt(0) || 'م' }}</span>
                 </div>
               }
 
@@ -245,7 +245,7 @@
             <div class="p-6">
               <div class="flex items-start justify-between mb-3">
                 <h3 class="text-xl font-black text-gray-900 group-hover:text-teal-700 transition-colors duration-300 line-clamp-1">
-                  {{ restaurant.name || 'مطعم بدون اسم' }}
+                  {{ restaurant.restaurantName || 'مطعم بدون اسم' }}
                 </h3>
               </div>
 
