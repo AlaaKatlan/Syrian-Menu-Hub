@@ -3,10 +3,12 @@ export interface RestaurantDetails {
   restaurantName: string;
   address: string;
   logoURL: string;
-  phone?: string;
-  facebook?: string;
-  instagram?: string;
-  website?: string;
+  whatsAppNumber?: string;
+  facebookURL?: string;
+  instagramURL?: string;
+  websiteURL?: string;
+  longitude?: number;
+  latitude?: number;
   category?: string; // ⬅️ أضفنا هذا
   rating?: number;   // ⬅️ وأضفنا التقييم أيضاً
   features?: {

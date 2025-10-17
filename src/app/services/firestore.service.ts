@@ -80,10 +80,12 @@ export class FirestoreService {
             logoURL: data['logoURL'] || '',
             category: data['category'] || 'مطعم سوري',
             rating: data['rating'] || 4.0,
-            phone: data['phone'] || '',
-            facebook: data['facebook'] || '',
-            instagram: data['instagram'] || '',
-            website: data['website'] || '',
+            whatsAppNumber: data['whatsAppNumber'] || '',
+            facebookURL: data['facebookURL'] || '',
+            instagramURL: data['instagramURL'] || '',
+            websiteURL: data['websiteURL'] || '',
+            latitude: data['latitude'] || '',
+            longitude: data['longitude'] || '',
             features: data['features'] || { delivery: true }
           } as RestaurantDetails;
         } else {

@@ -27,6 +27,7 @@ export class RestaurantComponent {
   filteredItems = computed<MenuItem[]>(() => {
     const data = this.restaurant();
     const category = this.selectedCategory();
+    console.log('Filtered Items:', category, data);
     if (!data?.menu?.items) return [];
     if (!category) return data.menu.items;
     return data.menu.items.filter(item => item.category === category);
