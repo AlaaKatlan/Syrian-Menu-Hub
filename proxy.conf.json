@@ -1,0 +1,10 @@
+{
+  "/gas": {
+    "target": "https://script.google.com",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/gas": ""
+    }
+  }
+}

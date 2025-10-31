@@ -5,6 +5,7 @@ import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { provideHttpClient, withFetch, withInterceptorsFromDi, withJsonpSupport } from '@angular/common/http';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCP7Y7lkGhsqAZ-tVRkYbjWzAHLnC9Vtp4",
@@ -23,5 +24,8 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
     provideFirestore(() => getFirestore()),
+       provideHttpClient(withJsonpSupport()) // ✅ إضافة دعم JSONP
+
+
   ]
 };

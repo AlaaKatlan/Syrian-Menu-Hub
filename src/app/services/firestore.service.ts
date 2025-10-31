@@ -1,95 +1,91 @@
-// firestore.service.ts (محدث ومصحح)
 import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, catchError, timeout, tap } from 'rxjs/operators';
 import {
-  Firestore,
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-  query,
-  orderBy,
-  where
-} from '@angular/fire/firestore';
-import { Observable, from, forkJoin, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
-import { RestaurantDetails, RestaurantMenu, CombinedRestaurantData, MenuItem } from '../models/restaurant.model';
+  RestaurantDetails,
+  CombinedRestaurantData,
+  RestaurantMenu,
+  MenuItem
+} from '../models/restaurant.model';
+
+interface GasResponse<T> {
+  status: 'success' | 'error';
+  data?: T;
+  message?: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class FirestoreService {
-  private firestore: Firestore = inject(Firestore);
+  private http = inject(HttpClient);
+
+  // استخدام Proxy المحلي مباشرة
+  private gasWebAppUrl = '/gas/macros/s/AKfycbyFW_0pJaLlpk23KOWY1XPL-iHTiL8K4mdvAUd6kOw-HgAHDV2GKe6xXBba7_hi-bflgA/exec';
+
+  private fetchFromGAS<T>(action: string, params: Record<string, any> = {}): Observable<GasResponse<T>> {
+    const queryParams = new URLSearchParams({ action, ...params }).toString();
+    const url = `${this.gasWebAppUrl}?${queryParams}`;
+
+    console.log(`🌐 [GAS Local Proxy Request] ${action}`, params);
+
+    return this.http.get<GasResponse<T>>(url).pipe(
+      timeout(15000),
+      catchError(error => {
+        console.error(`❌ [GAS Local Proxy Error] (${action})`, error);
+        return of({
+          status: 'error',
+          message: error.message || 'فشل في الاتصال بالخادم',
+          data: undefined
+        } as GasResponse<T>);
+      })
+    );
+  }
+
+  private handleGASResponse<T>(response: GasResponse<T>): T | null {
+    if (response.status === 'success' && response.data !== undefined) {
+      return response.data;
+    } else {
+      console.warn('⚠️ خطأ في استجابة GAS:', response.message);
+      return null;
+    }
+  }
 
   getAllRestaurants(): Observable<RestaurantDetails[]> {
-    const restaurantsCol = collection(this.firestore, 'restaurants');
-    const q = query(restaurantsCol, orderBy('restaurantName'));
-
-    return from(getDocs(q)).pipe(
-      map(snapshot => {
-        console.log('📊 عدد المطاعم المستلمة:', snapshot.docs.length);
-
-        const restaurants = snapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log('📄 بيانات المطعم:', doc.id, data);
-
-          return {
-            id: doc.id,
-            restaurantName: data['restaurantName'] || 'بدون اسم',
-            address: data['address'] || 'سوريا',
-            logoURL: data['logoURL'] || '',
-            category: data['category'] || 'مطعم سوري',
-            rating: data['rating'] || 4.0,
-            phone: data['phone'] || '',
-            facebook: data['facebook'] || '',
-            instagram: data['instagram'] || '',
-            website: data['website'] || '',
-            features: data['features'] || { delivery: true }
-          } as RestaurantDetails;
-        });
-
-        return restaurants;
-      }),
-      catchError(error => {
-        console.error('❌ خطأ في جلب المطاعم:', error);
-        return of([]); // إرجاع مصفوفة فارغة في حالة الخطأ
+    console.log('🔄 جلب قائمة المطاعم من Apps Script...');
+    return this.fetchFromGAS<RestaurantDetails[]>('getActiveRestaurants').pipe(
+      map(response => {
+        const data = this.handleGASResponse(response) || [];
+        console.log(`✅ تم استلام ${data.length} مطعم`);
+        return data;
       })
     );
   }
 
   getRestaurantData(id: string): Observable<CombinedRestaurantData | null> {
     if (!id) {
-      console.error('❌ معرّف المطعم غير موجود');
       return of(null);
     }
+    console.log(`🔄 جلب بيانات المطعم (ID: ${id}) من Apps Script...`);
+    return this.fetchFromGAS<any>('getRestaurantData', { id }).pipe(
+      map(response => {
+        console.log('📦 استجابة GAS الخام:', response);
 
-    console.log('🔍 جلب بيانات المطعم:', id);
+        if (response.status === 'success' && response.data) {
+          const restaurantData = this.transformFirestoreData(response.data);
 
-    const detailsDocRef = doc(this.firestore, `restaurants/${id}`);
-    const menuDocRef = doc(this.firestore, `restaurantMenus/${id}`);
+          if (restaurantData) {
+            console.log('✅ بيانات المطعم المحولة:', restaurantData);
+            console.log(`📊 عدد العناصر في القائمة: ${restaurantData.menu.items.length}`);
+            console.log(`🏷️ الفئات المتاحة: ${restaurantData.menu.categories.join(', ')}`);
+          } else {
+            console.error('❌ فشل في تحويل بيانات المطعم');
+          }
 
-    const details$ = from(getDoc(detailsDocRef)).pipe(
-      map(snap => {
-        if (snap.exists()) {
-          const data = snap.data();
-
-          console.log('✅ بيانات المطعم موجودة:', data);
-          return {
-            id: snap.id,
-            restaurantName: data['restaurantName'] || 'بدون اسم',
-            address: data['address'] || 'سوريا',
-            logoURL: data['logoURL'] || '',
-            category: data['category'] || 'مطعم سوري',
-            rating: data['rating'] || 4.0,
-            whatsAppNumber: data['whatsAppNumber'] || '',
-            facebookURL: data['facebookURL'] || '',
-            instagramURL: data['instagramURL'] || '',
-            websiteURL: data['websiteURL'] || '',
-            latitude: data['latitude'] || '',
-            longitude: data['longitude'] || '',
-            features: data['features'] || { delivery: true }
-          } as RestaurantDetails;
+          return restaurantData;
         } else {
-          console.log('❌ بيانات المطعم غير موجودة');
+          console.error('❌ خطأ في استجابة GAS:', response.message);
           return null;
         }
       }),
@@ -98,64 +94,128 @@ export class FirestoreService {
         return of(null);
       })
     );
-
-    const menu$ = from(getDoc(menuDocRef)).pipe(
-      map(snap => {
-        if (snap.exists()) {
-          const data = snap.data();
-
-          // نقوم بفلترة مصفوفة "items"
-          const visibleItems = (data['items'] as MenuItem[] || []).filter(item => item.show === true);
-
-          console.log(`✅ قائمة الطعام موجودة، العناصر المعروضة: ${visibleItems.length}`);
-          console.log('✅ قائمة الطعام موجودة:', data);
-          return {
-            categories: data['categories'] || [],
-            items: visibleItems // نستخدم المصفوفة المفلترة
-          } as RestaurantMenu;
-        } else {
-          console.log('❌ قائمة الطعام غير موجودة');
-          return null;
-        }
-      }),
-      catchError(error => {
-        console.error('❌ خطأ في جلب قائمة الطعام:', error);
-        return of(null);
-      })
-    );
-
-    return forkJoin({ details: details$, menu: menu$ }).pipe(
-      map(result => {
-        if (result.details && result.menu) {
-          console.log('✅ بيانات كاملة للمطعم:', result.details.restaurantName);
-          return result as CombinedRestaurantData;
-        } else {
-          console.error('❌ بيانات ناقصة للمطعم:', {
-            details: !!result.details,
-            menu: !!result.menu
-          });
-          return null;
-        }
-      }),
-      catchError(error => {
-        console.error('❌ خطأ في دمج البيانات:', error);
-        return of(null);
-      })
-    );
   }
 
-  // دالة مساعدة للتحقق من اتصال Firebase
-  testConnection(): Observable<boolean> {
-    const testDocRef = doc(this.firestore, 'restaurants/test');
-    return from(getDoc(testDocRef)).pipe(
-      map(() => {
-        console.log('✅ اتصال Firebase يعمل بشكل صحيح');
-        return true;
-      }),
-      catchError(error => {
-        console.error('❌ خطأ في اتصال Firebase:', error);
-        return of(false);
-      })
-    );
+  private transformFirestoreData(firestoreData: any): CombinedRestaurantData | null {
+  if (!firestoreData) return null;
+
+  try {
+    console.log('🔧 تحويل بيانات Firestore:', firestoreData);
+
+    // استخراج التفاصيل من المستند الرئيسي
+    const details = this.extractRestaurantDetails(firestoreData.details);
+
+    // استخراج القائمة
+    const menu = this.extractMenuData(firestoreData.menu);
+
+    const result: CombinedRestaurantData = {
+      details: details,
+      menu: menu
+    };
+
+    console.log('✅ البيانات المحولة:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ خطأ في تحويل البيانات:', error);
+    return null;
   }
+}
+
+private extractRestaurantDetails(detailsData: any): RestaurantDetails {
+  if (!detailsData) {
+    return this.getDefaultRestaurantDetails();
+  }
+
+  return {
+    id: detailsData.id || '',
+    restaurantName: detailsData.restaurantName || detailsData.name || 'غير محدد',
+    address: detailsData.address || '',
+    logoURL: detailsData.logoURL || detailsData.logo || '',
+
+    whatsAppNumber: detailsData.whatsAppNumber?.toString() || '',
+    facebookURL: detailsData.facebookURL || '',
+    instagramURL: detailsData.instagramURL || '',
+    websiteURL: detailsData.websiteURL || '',
+    category: detailsData.category || '',
+    rating: detailsData.rating || 0,
+    longitude: detailsData.longitude || undefined,
+    latitude: detailsData.latitude || undefined,
+    features: detailsData.features || {
+      delivery: detailsData.delivery || false,
+      takeaway: detailsData.takeaway || false,
+      reservation: detailsData.reservation || false
+    }
+  };
+}
+
+private extractMenuData(menuData: any): RestaurantMenu {
+  if (!menuData) {
+    return { categories: [], items: [] };
+  }
+
+  // استخراج العناصر
+  let items: MenuItem[] = [];
+
+  // البحث عن العناصر في مختلف الأماكن المحتملة
+  if (menuData.items && Array.isArray(menuData.items)) {
+    items = menuData.items;
+  } else if (menuData.menuItems && Array.isArray(menuData.menuItems)) {
+    items = menuData.menuItems;
+  } else {
+    // إذا لم تكن العناصر في array، قد تكون في fields
+    const fields = menuData.fields || menuData;
+    for (const key in fields) {
+      if (Array.isArray(fields[key])) {
+        items = fields[key];
+        break;
+      }
+    }
+  }
+
+  // تصفية العناصر النشطة فقط
+  const activeItems = items.filter(item =>
+    item && item.show !== false && item.name && item.category
+  );
+
+  // استخراج الفئات من العناصر
+  const categories = this.extractCategories(activeItems);
+
+  return {
+    categories: categories,
+    items: activeItems
+  };
+}
+
+private extractCategories(items: MenuItem[]): string[] {
+  if (!items || !Array.isArray(items)) return [];
+
+  const categories = [...new Set(
+    items
+      .map(item => item.category?.trim())
+      .filter(category => category && category !== '')
+  )];
+
+  return categories;
+}
+
+private getDefaultRestaurantDetails(): RestaurantDetails {
+  return {
+    id: '',
+    restaurantName: 'غير محدد',
+    address: '',
+    logoURL: '',
+
+    whatsAppNumber: '',
+    facebookURL: '',
+    instagramURL: '',
+    websiteURL: '',
+    category: '',
+    rating: 0,
+    features: {
+      delivery: false,
+      takeaway: false,
+      reservation: false
+    }
+  };
+}
 }
