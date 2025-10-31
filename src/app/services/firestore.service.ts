@@ -20,20 +20,43 @@ interface GasResponse<T> {
 })
 export class FirestoreService {
   private http = inject(HttpClient);
-
-  // استخدام Proxy المحلي مباشرة
-  private gasWebAppUrl = '/gas/macros/s/AKfycbyFW_0pJaLlpk23KOWY1XPL-iHTiL8K4mdvAUd6kOw-HgAHDV2GKe6xXBba7_hi-bflgA/exec';
+   // استخدام Proxy المحلي مباشرة
+private gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbx3TLyE-LTu4aot2ZpOztlseF5o2Hnd4Uo09zgxbdMmBQm5P7DGIlYukGrA-viR7iaRgA/exec';
 
   private fetchFromGAS<T>(action: string, params: Record<string, any> = {}): Observable<GasResponse<T>> {
-    const queryParams = new URLSearchParams({ action, ...params }).toString();
-    const url = `${this.gasWebAppUrl}?${queryParams}`;
+    // إذا كان الرابط النسبي لا يعمل، استخدم الرابط المطلق
+    let baseUrl = this.gasWebAppUrl;
+    if (baseUrl.startsWith('/')) {
+      baseUrl = window.location.origin + baseUrl;
+    }
 
-    console.log(`🌐 [GAS Local Proxy Request] ${action}`, params);
+    const queryParams = new URLSearchParams({ action, ...params }).toString();
+    const url = `${baseUrl}?${queryParams}`;
+
+    console.log(`🌐 [GAS Request] ${url}`);
 
     return this.http.get<GasResponse<T>>(url).pipe(
       timeout(15000),
       catchError(error => {
-        console.error(`❌ [GAS Local Proxy Error] (${action})`, error);
+        console.error(`❌ [GAS Error] (${action})`, error);
+
+        // إذا فشل مع الرابط المطلق، جرب بدون النطاق
+        if (url.includes('syrianmenuhub.com')) {
+          const fallbackUrl = `https://script.google.com${this.gasWebAppUrl.replace('/gas/', '/macros/')}?${queryParams}`;
+          console.log(`🔄 جرب رابط بديل: ${fallbackUrl}`);
+
+          return this.http.get<GasResponse<T>>(fallbackUrl).pipe(
+            catchError(fallbackError => {
+              console.error(`❌ فشل الرابط البديل أيضًا:`, fallbackError);
+              return of({
+                status: 'error',
+                message: 'فشل في الاتصال بالخادم',
+                data: undefined
+              } as GasResponse<T>);
+            })
+          );
+        }
+
         return of({
           status: 'error',
           message: error.message || 'فشل في الاتصال بالخادم',
