@@ -9,7 +9,7 @@ import { Component } from '@angular/core';
       <div class="container mx-auto py-8 px-4 text-center">
         <p>&copy; {{ currentYear }} Syrian Menu Hub. كل الحقوق محفوظة.</p>
         <p class="text-gray-400 text-sm mt-2">
-          تم تطويره بحب لمجتمعنا 🇸🇾
+          تم تطويره بحب لمجتمعنا
         </p>
       </div>
     </footer>

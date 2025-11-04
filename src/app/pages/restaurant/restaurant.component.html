@@ -93,7 +93,7 @@
             <h3 class="text-lg font-bold text-gray-800">{{ item.name }}</h3>
             <p class="text-gray-500 text-sm mt-1">{{ item.description }}</p>
             <div class="text-right mt-3">
-              <span class="text-md font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">{{ item.price }}
+              <span class="text-md font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">{{ item.price | number : '1.0-0'}}
                 ل.س</span>
             </div>
           </div>
