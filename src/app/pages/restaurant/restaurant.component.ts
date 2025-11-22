@@ -27,7 +27,6 @@ export class RestaurantComponent {
   filteredItems = computed<MenuItem[]>(() => {
     const data = this.restaurant();
     const category = this.selectedCategory();
-    console.log('Filtered Items:', category, data);
     if (!data?.menu?.items) return [];
     if (!category) return data.menu.items;
     return data.menu.items.filter(item => item.category === category);
@@ -37,23 +36,32 @@ export class RestaurantComponent {
     this.selectedCategory.set(category);
   }
 
-getImageURL(url: string | undefined) {
+  /**
+   * ✅ معالجة روابط الصور (Google Drive + باقي المصادر) - مُحدَّث
+   */
+getImageURL(url?: string): string {
   if (!url) return '';
 
-  // 🔹 إذا الرابط من Google Drive (شكل: https://drive.google.com/file/d/ID/view?usp=sharing)
-  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (match && match[1]) {
-    return `https://lh3.googleusercontent.com/d/${match[1]}=w500`; // حجم الصورة 500px
+  if (url.includes('drive.google.com')) {
+    const idMatch =
+      url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+      url.match(/\/d\/([a-zA-Z0-9_-]+)/)?.[1] ||
+      url.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+
+    if (idMatch) {
+      return `https://lh3.googleusercontent.com/d/${idMatch}=w512?authuser=0`;
+    }
+
+    console.warn('⚠️ لم يتم العثور على ID صالح في رابط Google Drive:', url);
+    return '';
   }
 
-  // 🔹 إذا الرابط من forms مثل uc?id=ID
-  const ucMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (ucMatch && ucMatch[1]) {
-    return `https://lh3.googleusercontent.com/d/${ucMatch[1]}=w500`;
+  if (url.includes('dropbox.com')) {
+    return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
   }
 
-  // 🔹 روابط عادية (Firebase Storage, ImgBB, رابط مباشر..)
   return url;
 }
+
 
 }
