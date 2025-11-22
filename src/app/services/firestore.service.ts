@@ -20,8 +20,8 @@ interface GasResponse<T> {
 })
 export class FirestoreService {
   private http = inject(HttpClient);
-   // استخدام Proxy المحلي مباشرة
-private gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbx3TLyE-LTu4aot2ZpOztlseF5o2Hnd4Uo09zgxbdMmBQm5P7DGIlYukGrA-viR7iaRgA/exec';
+  // استخدام Proxy المحلي مباشرة
+  private gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbx3TLyE-LTu4aot2ZpOztlseF5o2Hnd4Uo09zgxbdMmBQm5P7DGIlYukGrA-viR7iaRgA/exec';
 
   private fetchFromGAS<T>(action: string, params: Record<string, any> = {}): Observable<GasResponse<T>> {
     // إذا كان الرابط النسبي لا يعمل، استخدم الرابط المطلق
@@ -120,125 +120,172 @@ private gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbx3TLyE-LTu4aot2
   }
 
   private transformFirestoreData(firestoreData: any): CombinedRestaurantData | null {
-  if (!firestoreData) return null;
+    if (!firestoreData) return null;
 
-  try {
-    console.log('🔧 تحويل بيانات Firestore:', firestoreData);
+    try {
+      console.log('🔧 تحويل بيانات Firestore:', firestoreData);
 
-    // استخراج التفاصيل من المستند الرئيسي
-    const details = this.extractRestaurantDetails(firestoreData.details);
+      // استخراج التفاصيل من المستند الرئيسي
+      const details = this.extractRestaurantDetails(firestoreData.details);
 
-    // استخراج القائمة
-    const menu = this.extractMenuData(firestoreData.menu);
+      // استخراج القائمة
+      const menu = this.extractMenuData(firestoreData.menu);
 
-    const result: CombinedRestaurantData = {
-      details: details,
-      menu: menu
-    };
+      const result: CombinedRestaurantData = {
+        details: details,
+        menu: menu
+      };
 
-    console.log('✅ البيانات المحولة:', result);
-    return result;
-  } catch (error) {
-    console.error('❌ خطأ في تحويل البيانات:', error);
-    return null;
-  }
-}
-
-private extractRestaurantDetails(detailsData: any): RestaurantDetails {
-  if (!detailsData) {
-    return this.getDefaultRestaurantDetails();
-  }
-
-  return {
-    id: detailsData.id || '',
-    restaurantName: detailsData.restaurantName || detailsData.name || 'غير محدد',
-    address: detailsData.address || '',
-    logoURL: detailsData.logoURL || detailsData.logo || '',
-
-    whatsAppNumber: detailsData.whatsAppNumber?.toString() || detailsData.phone?.toString()||'',
-    facebookURL: detailsData.facebookURL || detailsData.facebook|| '',
-    instagramURL: detailsData.instagramURL || detailsData.instagram|| '',
-    websiteURL: detailsData.websiteURL || detailsData.website|| '',
-    category: detailsData.category || '',
-    rating: detailsData.rating || 0,
-    longitude: detailsData.longitude || undefined,
-    latitude: detailsData.latitude || undefined,
-    features: detailsData.features || {
-      delivery: detailsData.delivery || false,
-      takeaway: detailsData.takeaway || false,
-      reservation: detailsData.reservation || false
+      console.log('✅ البيانات المحولة:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ خطأ في تحويل البيانات:', error);
+      return null;
     }
-  };
-}
-
-private extractMenuData(menuData: any): RestaurantMenu {
-  if (!menuData) {
-    return { categories: [], items: [] };
   }
 
-  // استخراج العناصر
-  let items: MenuItem[] = [];
+  private extractRestaurantDetails(detailsData: any): RestaurantDetails {
+    if (!detailsData) {
+      return this.getDefaultRestaurantDetails();
+    }
 
-  // البحث عن العناصر في مختلف الأماكن المحتملة
-  if (menuData.items && Array.isArray(menuData.items)) {
-    items = menuData.items;
-  } else if (menuData.menuItems && Array.isArray(menuData.menuItems)) {
-    items = menuData.menuItems;
-  } else {
-    // إذا لم تكن العناصر في array، قد تكون في fields
-    const fields = menuData.fields || menuData;
-    for (const key in fields) {
-      if (Array.isArray(fields[key])) {
-        items = fields[key];
-        break;
+    return {
+      id: detailsData.id || '',
+      restaurantName: detailsData.restaurantName || detailsData.name || 'غير محدد',
+      address: detailsData.address || '',
+
+      logoURL: detailsData.logoURL || detailsData.logo || '',
+
+      whatsAppNumber: detailsData.whatsAppNumber?.toString() || detailsData.phone?.toString() || '',
+      facebookURL: detailsData.facebookURL || detailsData.facebook || '',
+      instagramURL: detailsData.instagramURL || detailsData.instagram || '',
+      websiteURL: detailsData.websiteURL || detailsData.website || '',
+      category: detailsData.category || '',
+      rating: detailsData.rating || 0,
+      longitude: detailsData.longitude || undefined,
+      latitude: detailsData.latitude || undefined,
+      features: detailsData.features || {
+        delivery: detailsData.delivery || false,
+        takeaway: detailsData.takeaway || false,
+        reservation: detailsData.reservation || false
+      }
+    };
+  }
+
+  // private extractMenuData(menuData: any): RestaurantMenu {
+  //   if (!menuData) {
+  //     return { categories: [], items: [] };
+  //   }
+
+  //   // استخراج العناصر
+  //   let items: MenuItem[] = [];
+
+  //   // البحث عن العناصر في مختلف الأماكن المحتملة
+  //   if (menuData.items && Array.isArray(menuData.items)) {
+  //     items = menuData.items;
+  //   } else if (menuData.menuItems && Array.isArray(menuData.menuItems)) {
+  //     items = menuData.menuItems;
+  //   } else {
+  //     // إذا لم تكن العناصر في array، قد تكون في fields
+  //     const fields = menuData.fields || menuData;
+  //     for (const key in fields) {
+  //       if (Array.isArray(fields[key])) {
+  //         items = fields[key];
+  //         break;
+  //       }
+  //     }
+  //   }
+
+  //   // تصفية العناصر النشطة فقط
+  //   const activeItems = items.filter(item =>
+  //     item && item.show !== false && item.name && item.category
+  //   );
+
+  //   // استخراج الفئات من العناصر
+  //   const categories = this.extractCategories(activeItems);
+
+  //   return {
+  //     categories: categories,
+  //     items: activeItems
+  //   };
+  // }
+
+  private extractCategories(items: MenuItem[]): string[] {
+    if (!items || !Array.isArray(items)) return [];
+
+    const categories = [...new Set(
+      items
+        .map(item => item.category?.trim())
+        .filter(category => category && category !== '')
+    )];
+
+    return categories;
+  }
+
+  private getDefaultRestaurantDetails(): RestaurantDetails {
+    return {
+      id: '',
+      restaurantName: 'غير محدد',
+      address: '',
+      logoURL: '',
+
+      whatsAppNumber: '',
+      facebookURL: '',
+      instagramURL: '',
+      websiteURL: '',
+      category: '',
+      rating: 0,
+      features: {
+        delivery: false,
+        takeaway: false,
+        reservation: false
+      }
+    };
+  }
+  private extractMenuData(menuData: any): RestaurantMenu {
+    if (!menuData) {
+      return { categories: [], categories_en: [], items: [] };
+    }
+
+    let items: MenuItem[] = [];
+
+    if (menuData.items && Array.isArray(menuData.items)) {
+      items = menuData.items;
+    } else if (menuData.menuItems && Array.isArray(menuData.menuItems)) {
+      items = menuData.menuItems;
+    } else {
+      const fields = menuData.fields || menuData;
+      for (const key in fields) {
+        if (Array.isArray(fields[key])) {
+          items = fields[key];
+          break;
+        }
       }
     }
+
+    // تصفية العناصر النشطة فقط
+    const activeItems = items.filter(item =>
+      item && item.show !== false && item.name && item.category
+    );
+
+    // استخراج الفئات العربية
+    const categories = [...new Set(
+      activeItems
+        .map(item => item.category?.trim())
+        .filter(category => category && category !== '')
+    )];
+
+    // استخراج الفئات الإنجليزية
+const categories_en = [...new Set(
+  activeItems
+    .map(item => item.category_en?.trim() ?? '')
+    .filter(category => category !== '')
+)];
+
+    return {
+      categories: categories,
+      categories_en: categories_en,
+      items: activeItems
+    };
   }
-
-  // تصفية العناصر النشطة فقط
-  const activeItems = items.filter(item =>
-    item && item.show !== false && item.name && item.category
-  );
-
-  // استخراج الفئات من العناصر
-  const categories = this.extractCategories(activeItems);
-
-  return {
-    categories: categories,
-    items: activeItems
-  };
-}
-
-private extractCategories(items: MenuItem[]): string[] {
-  if (!items || !Array.isArray(items)) return [];
-
-  const categories = [...new Set(
-    items
-      .map(item => item.category?.trim())
-      .filter(category => category && category !== '')
-  )];
-
-  return categories;
-}
-
-private getDefaultRestaurantDetails(): RestaurantDetails {
-  return {
-    id: '',
-    restaurantName: 'غير محدد',
-    address: '',
-    logoURL: '',
-
-    whatsAppNumber: '',
-    facebookURL: '',
-    instagramURL: '',
-    websiteURL: '',
-    category: '',
-    rating: 0,
-    features: {
-      delivery: false,
-      takeaway: false,
-      reservation: false
-    }
-  };
-}
 }

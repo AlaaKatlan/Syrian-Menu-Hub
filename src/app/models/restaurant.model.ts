@@ -19,16 +19,20 @@ export interface RestaurantDetails {
 }
 
 export interface MenuItem {
-  name: string;
+ name: string;
+  name_en?: string;
   description: string;
+  description_en?: string;
   price: number;
   category: string;
+  category_en?: string;
   show: boolean;
   image?: string;
 }
 
 export interface RestaurantMenu {
   categories: string[];
+  categories_en?: string[];
   items: MenuItem[];
 }
 
