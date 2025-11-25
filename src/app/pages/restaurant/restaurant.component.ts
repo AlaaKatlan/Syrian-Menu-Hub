@@ -84,6 +84,19 @@ export class RestaurantComponent {
     return items;
   });
 
+  // إحصائيات الأفرع
+  branchesCount = computed(() => {
+    return this.restaurant()?.details.branches?.length || 0;
+  });
+
+  branchesWithWhatsApp = computed(() => {
+    return this.restaurant()?.details.branches?.filter(b => b.whatsAppNumber).length || 0;
+  });
+
+  branchesWithLocation = computed(() => {
+    return this.restaurant()?.details.branches?.filter(b => b.latitude && b.longitude).length || 0;
+  });
+
   filterByCategory(category: string) {
     this.selectedCategory.set(category);
   }
@@ -140,5 +153,135 @@ export class RestaurantComponent {
     }
 
     return url;
+  }
+
+  // ==================== دوال مساعدة للأفرع ====================
+
+  /**
+   * حساب المسافة بين نقطتين جغرافيتين باستخدام صيغة Haversine
+   * @param lat1 خط العرض الأول
+   * @param lon1 خط الطول الأول
+   * @param lat2 خط العرض الثاني
+   * @param lon2 خط الطول الثاني
+   * @returns المسافة بالكيلومتر
+   */
+  calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // نصف قطر الأرض بالكيلومتر
+    const dLat = this.deg2rad(lat2 - lat1);
+    const dLon = this.deg2rad(lon2 - lon1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    return Math.round(distance * 10) / 10; // تقريب لرقم عشري واحد
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
+  }
+
+  /**
+   * الحصول على موقع المستخدم الحالي
+   */
+  getUserLocation(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(resolve, reject);
+    });
+  }
+
+  /**
+   * ترتيب الأفرع حسب القرب من موقع المستخدم
+   */
+  async sortBranchesByDistance() {
+    try {
+      const position = await this.getUserLocation();
+      const userLat = position.coords.latitude;
+      const userLon = position.coords.longitude;
+
+      const data = this.restaurant();
+      if (!data?.details.branches) return;
+
+      const branchesWithDistance = data.details.branches.map(branch => {
+        if (branch.latitude && branch.longitude) {
+          const distance = this.calculateDistance(
+            userLat,
+            userLon,
+            branch.latitude,
+            branch.longitude
+          );
+          return { ...branch, distance };
+        }
+        return { ...branch, distance: Infinity };
+      });
+
+      // ترتيب الأفرع حسب المسافة
+      branchesWithDistance.sort((a, b) =>
+        (a.distance || Infinity) - (b.distance || Infinity)
+      );
+
+      console.log('الأفرع مرتبة حسب القرب:', branchesWithDistance);
+
+    } catch (error) {
+      console.log('لم يتم تفعيل خدمة الموقع:', error);
+    }
+  }
+
+  /**
+   * فتح خرائط جوجل للملاحة إلى الفرع
+   */
+openNavigation(lat: number, lon: number) {
+    // ✅ تم تصحيح رابط Google Maps ليعمل بشكل سليم
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+    window.open(url, '_blank');
+  }
+
+  /**
+   * نسخ عنوان الفرع إلى الحافظة
+   */
+  async copyAddress(address: string) {
+    try {
+      await navigator.clipboard.writeText(address);
+      console.log('تم نسخ العنوان');
+      // يمكنك إضافة إشعار للمستخدم هنا (مثل Toast notification)
+    } catch (error) {
+      console.error('فشل في نسخ العنوان:', error);
+    }
+  }
+
+  /**
+   * مشاركة معلومات الفرع عبر Web Share API
+   */
+  async shareBranch(branchId: string, address: string) {
+    const data = this.restaurant();
+    if (!data) return;
+
+    const shareData = {
+      title: `${data.details.restaurantName} - فرع ${branchId}`,
+      text: `العنوان: ${address}`,
+      url: window.location.href
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        console.log('تمت المشاركة بنجاح');
+      } else {
+        // fallback: نسخ الرابط
+        await navigator.clipboard.writeText(window.location.href);
+        console.log('تم نسخ الرابط');
+      }
+    } catch (error) {
+      console.error('فشل في المشاركة:', error);
+    }
   }
 }

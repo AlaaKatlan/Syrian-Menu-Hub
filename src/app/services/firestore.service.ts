@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map, catchError, timeout, tap } from 'rxjs/operators';
+import { map, catchError, timeout } from 'rxjs/operators';
 import {
   RestaurantDetails,
   CombinedRestaurantData,
@@ -20,12 +20,17 @@ interface GasResponse<T> {
 })
 export class FirestoreService {
   private http = inject(HttpClient);
-  // استخدام Proxy المحلي مباشرة
+
+  // تأكد من أن هذا الرابط هو رابط الـ Web App الخاص بك (Deployment ID)
   private gasWebAppUrl = 'https://script.google.com/macros/s/AKfycbx3TLyE-LTu4aot2ZpOztlseF5o2Hnd4Uo09zgxbdMmBQm5P7DGIlYukGrA-viR7iaRgA/exec';
 
+  /**
+   * دالة الاتصال الأساسية بـ Google Apps Script
+   */
   private fetchFromGAS<T>(action: string, params: Record<string, any> = {}): Observable<GasResponse<T>> {
-    // إذا كان الرابط النسبي لا يعمل، استخدم الرابط المطلق
     let baseUrl = this.gasWebAppUrl;
+
+    // التعامل مع الروابط النسبية (Relative URLs)
     if (baseUrl.startsWith('/')) {
       baseUrl = window.location.origin + baseUrl;
     }
@@ -36,24 +41,21 @@ export class FirestoreService {
     console.log(`🌐 [GAS Request] ${url}`);
 
     return this.http.get<GasResponse<T>>(url).pipe(
-      timeout(15000),
+      timeout(20000), // زيادة المهلة قليلاً لضمان تحميل البيانات
       catchError(error => {
         console.error(`❌ [GAS Error] (${action})`, error);
 
-        // إذا فشل مع الرابط المطلق، جرب بدون النطاق
-        if (url.includes('syrianmenuhub.com')) {
-          const fallbackUrl = `https://script.google.com${this.gasWebAppUrl.replace('/gas/', '/macros/')}?${queryParams}`;
-          console.log(`🔄 جرب رابط بديل: ${fallbackUrl}`);
+        // محاولة بديلة (Fallback) في حال فشل البروكسي
+        if (url.includes('syrianmenuhub.com') || baseUrl.startsWith('/')) {
+          const fallbackUrl = `https://script.google.com/macros/s/AKfycbx3TLyE-LTu4aot2ZpOztlseF5o2Hnd4Uo09zgxbdMmBQm5P7DGIlYukGrA-viR7iaRgA/exec?${queryParams}`;
+          console.log(`🔄 محاولة رابط بديل مباشر: ${fallbackUrl}`);
 
           return this.http.get<GasResponse<T>>(fallbackUrl).pipe(
-            catchError(fallbackError => {
-              console.error(`❌ فشل الرابط البديل أيضًا:`, fallbackError);
-              return of({
-                status: 'error',
-                message: 'فشل في الاتصال بالخادم',
-                data: undefined
-              } as GasResponse<T>);
-            })
+            catchError(() => of({
+              status: 'error',
+              message: 'فشل في الاتصال بالخادم، يرجى التحقق من الإنترنت',
+              data: undefined
+            } as GasResponse<T>))
           );
         }
 
@@ -70,47 +72,32 @@ export class FirestoreService {
     if (response.status === 'success' && response.data !== undefined) {
       return response.data;
     } else {
-      console.warn('⚠️ خطأ في استجابة GAS:', response.message);
+      console.warn('⚠️ تنبيه من السيرفر:', response.message);
       return null;
     }
   }
 
+  /**
+   * جلب قائمة المطاعم (للصفحة الرئيسية مثلاً)
+   */
   getAllRestaurants(): Observable<RestaurantDetails[]> {
-    console.log('🔄 جلب قائمة المطاعم من Apps Script...');
     return this.fetchFromGAS<RestaurantDetails[]>('getActiveRestaurants').pipe(
-      map(response => {
-        const data = this.handleGASResponse(response) || [];
-        console.log(`✅ تم استلام ${data.length} مطعم`);
-        return data;
-      })
+      map(response => this.handleGASResponse(response) || [])
     );
   }
 
+  /**
+   * جلب بيانات مطعم محدد (التفاصيل + القائمة)
+   */
   getRestaurantData(id: string): Observable<CombinedRestaurantData | null> {
-    if (!id) {
-      return of(null);
-    }
-    console.log(`🔄 جلب بيانات المطعم (ID: ${id}) من Apps Script...`);
+    if (!id) return of(null);
+
     return this.fetchFromGAS<any>('getRestaurantData', { id }).pipe(
       map(response => {
-        console.log('📦 استجابة GAS الخام:', response);
-
         if (response.status === 'success' && response.data) {
-          const restaurantData = this.transformFirestoreData(response.data);
-
-          if (restaurantData) {
-            console.log('✅ بيانات المطعم المحولة:', restaurantData);
-            console.log(`📊 عدد العناصر في القائمة: ${restaurantData.menu.items.length}`);
-            console.log(`🏷️ الفئات المتاحة: ${restaurantData.menu.categories.join(', ')}`);
-          } else {
-            console.error('❌ فشل في تحويل بيانات المطعم');
-          }
-
-          return restaurantData;
-        } else {
-          console.error('❌ خطأ في استجابة GAS:', response.message);
-          return null;
+          return this.transformFirestoreData(response.data);
         }
+        return null;
       }),
       catchError(error => {
         console.error('❌ خطأ في جلب بيانات المطعم:', error);
@@ -119,27 +106,23 @@ export class FirestoreService {
     );
   }
 
+  // =================================================================
+  // ===================  TRANSFORMATION LOGIC   =====================
+  // =================================================================
+
   private transformFirestoreData(firestoreData: any): CombinedRestaurantData | null {
     if (!firestoreData) return null;
 
     try {
-      console.log('🔧 تحويل بيانات Firestore:', firestoreData);
-
-      // استخراج التفاصيل من المستند الرئيسي
+      // 1. استخراج التفاصيل (بما فيها الفروع الآن)
       const details = this.extractRestaurantDetails(firestoreData.details);
 
-      // استخراج القائمة
+      // 2. استخراج القائمة (Menu)
       const menu = this.extractMenuData(firestoreData.menu);
 
-      const result: CombinedRestaurantData = {
-        details: details,
-        menu: menu
-      };
-
-      console.log('✅ البيانات المحولة:', result);
-      return result;
+      return { details, menu };
     } catch (error) {
-      console.error('❌ خطأ في تحويل البيانات:', error);
+      console.error('❌ خطأ أثناء تحويل البيانات:', error);
       return null;
     }
   }
@@ -149,77 +132,146 @@ export class FirestoreService {
       return this.getDefaultRestaurantDetails();
     }
 
+    // التعامل مع بنية Firestore (fields) أو JSON عادي
+    const fields = detailsData.fields || detailsData;
+
+    // استخراج الفروع (الموجودة الآن داخل details)
+    const rawBranches = fields.branches || detailsData.branches;
+
     return {
-      id: detailsData.id || '',
-      restaurantName: detailsData.restaurantName || detailsData.name || 'غير محدد',
-      address: detailsData.address || '',
+      id: this.getStringValue(fields.id) || '',
+      restaurantName: this.getStringValue(fields.restaurantName) || this.getStringValue(fields.name) || 'غير محدد',
+      address: this.getStringValue(fields.address) || '',
+      logoURL: this.getStringValue(fields.logoURL) || this.getStringValue(fields.logo) || '',
 
-      logoURL: detailsData.logoURL || detailsData.logo || '',
+      whatsAppNumber: this.getStringValue(fields.whatsAppNumber) || this.getStringValue(fields.phone) || '',
+      facebookURL: this.getStringValue(fields.facebookURL) || this.getStringValue(fields.facebook) || '',
+      instagramURL: this.getStringValue(fields.instagramURL) || this.getStringValue(fields.instagram) || '',
+      websiteURL: this.getStringValue(fields.websiteURL) || this.getStringValue(fields.website) || '',
 
-      whatsAppNumber: detailsData.whatsAppNumber?.toString() || detailsData.phone?.toString() || '',
-      facebookURL: detailsData.facebookURL || detailsData.facebook || '',
-      instagramURL: detailsData.instagramURL || detailsData.instagram || '',
-      websiteURL: detailsData.websiteURL || detailsData.website || '',
-      category: detailsData.category || '',
-      rating: detailsData.rating || 0,
-      longitude: detailsData.longitude || undefined,
-      latitude: detailsData.latitude || undefined,
-      features: detailsData.features || {
-        delivery: detailsData.delivery || false,
-        takeaway: detailsData.takeaway || false,
-        reservation: detailsData.reservation || false
+      category: this.getStringValue(fields.category) || '',
+      rating: this.getNumberValue(fields.rating),
+
+      // ✅ استدعاء الدالة الجديدة لمعالجة الفروع
+      branches: this.extractBranches(rawBranches),
+
+      features: {
+        delivery: this.getBooleanValue(fields.delivery),
+        takeaway: this.getBooleanValue(fields.takeaway),
+        reservation: this.getBooleanValue(fields.reservation)
       }
     };
   }
 
-  // private extractMenuData(menuData: any): RestaurantMenu {
-  //   if (!menuData) {
-  //     return { categories: [], items: [] };
-  //   }
+  /**
+   * دالة مخصصة لتحويل هيكلية الفروع من Backend إلى Frontend Model
+   */
+  private extractBranches(branchesData: any): any[] {
+    if (!branchesData) return [];
 
-  //   // استخراج العناصر
-  //   let items: MenuItem[] = [];
+    let branchesArray: any[] = [];
 
-  //   // البحث عن العناصر في مختلف الأماكن المحتملة
-  //   if (menuData.items && Array.isArray(menuData.items)) {
-  //     items = menuData.items;
-  //   } else if (menuData.menuItems && Array.isArray(menuData.menuItems)) {
-  //     items = menuData.menuItems;
-  //   } else {
-  //     // إذا لم تكن العناصر في array، قد تكون في fields
-  //     const fields = menuData.fields || menuData;
-  //     for (const key in fields) {
-  //       if (Array.isArray(fields[key])) {
-  //         items = fields[key];
-  //         break;
-  //       }
-  //     }
-  //   }
+    // الحالة 1: بيانات قادمة بتنسيق Firestore ArrayValue
+    if (branchesData.arrayValue && branchesData.arrayValue.values) {
+      branchesArray = branchesData.arrayValue.values;
+    }
+    // الحالة 2: بيانات قادمة كمصفوفة JSON عادية
+    else if (Array.isArray(branchesData)) {
+      branchesArray = branchesData;
+    }
 
-  //   // تصفية العناصر النشطة فقط
-  //   const activeItems = items.filter(item =>
-  //     item && item.show !== false && item.name && item.category
-  //   );
+    // التحويل (Mapping)
+    return branchesArray.map(b => {
+      // استخراج الحقول سواء كانت داخل mapValue.fields أو مباشرة
+      const fields = b.mapValue?.fields || b;
 
-  //   // استخراج الفئات من العناصر
-  //   const categories = this.extractCategories(activeItems);
+      return {
+        // نربط الحقول القادمة من السكريبت (branchId, lat, lng, whatsapp)
+        // مع الحقول المطلوبة في المودل (id, latitude, longitude, whatsAppNumber)
+        id: this.getStringValue(fields.branchId) || this.getStringValue(fields.id),
+        address: this.getStringValue(fields.address),
+        latitude: this.getNumberValue(fields.lat) || this.getNumberValue(fields.latitude),
+        longitude: this.getNumberValue(fields.lng) || this.getNumberValue(fields.longitude),
+        whatsAppNumber: this.getStringValue(fields.whatsapp) || this.getStringValue(fields.whatsAppNumber)
+      };
+    }).filter(b => b.address && b.address !== ''); // تصفية الفروع الفارغة
+  }
 
-  //   return {
-  //     categories: categories,
-  //     items: activeItems
-  //   };
-  // }
+  private extractMenuData(menuData: any): RestaurantMenu {
+    if (!menuData) {
+      return { categories: [], categories_en: [], items: [] };
+    }
 
-  private extractCategories(items: MenuItem[]): string[] {
-    if (!items || !Array.isArray(items)) return [];
+    let items: MenuItem[] = [];
 
+    // محاولة قراءة العناصر بناءً على شكل البيانات
+    if (menuData.items && Array.isArray(menuData.items)) {
+      items = menuData.items; // JSON بسيط
+    } else if (menuData.fields?.items?.arrayValue?.values) {
+       // Firestore Raw Structure
+       items = menuData.fields.items.arrayValue.values.map((i: any) => {
+         const f = i.mapValue?.fields || i;
+         return {
+           name: this.getStringValue(f.name),
+           name_en: this.getStringValue(f.name_en),
+           description: this.getStringValue(f.description),
+           description_en: this.getStringValue(f.description_en),
+           price: this.getNumberValue(f.price),
+           category: this.getStringValue(f.category),
+           category_en: this.getStringValue(f.category_en),
+           image: this.getStringValue(f.image),
+           show: this.getBooleanValue(f.show)
+         };
+       });
+    }
+
+    // تصفية العناصر المعروضة فقط
+    const activeItems = items.filter(item => item && item.show !== false && item.name);
+
+    // استخراج الفئات الفريدة (عربي)
     const categories = [...new Set(
-      items
-        .map(item => item.category?.trim())
-        .filter(category => category && category !== '')
+      activeItems
+        .map(i => i.category?.trim())
+        .filter((c): c is string => !!c) // ✅ استخدام Type Predicate
     )];
 
-    return categories;
+    // استخراج الفئات الفريدة (إنجليزي) - وهنا كان الخطأ
+    const categories_en = [...new Set(
+      activeItems
+        .map(i => i.category_en?.trim())
+        .filter((c): c is string => !!c) // ✅ هذا السطر يخبر TS أن الناتج نص حصراً
+    )];
+
+    return {
+      categories,
+      categories_en,
+      items: activeItems
+    };
+  }
+
+  // =================================================================
+  // ===================    DATA TYPE HELPERS    =====================
+  // =================================================================
+
+  private getStringValue(field: any): string {
+    if (!field) return '';
+    // التعامل مع { stringValue: "..." } أو القيمة المباشرة
+    return field.stringValue !== undefined ? field.stringValue : String(field);
+  }
+
+  private getNumberValue(field: any): number {
+    if (!field) return 0;
+    // التعامل مع doubleValue, integerValue أو رقم مباشر
+    if (field.doubleValue !== undefined) return Number(field.doubleValue);
+    if (field.integerValue !== undefined) return Number(field.integerValue);
+    return Number(field) || 0;
+  }
+
+  private getBooleanValue(field: any): boolean {
+    if (!field) return false;
+    // التعامل مع booleanValue أو قيمة مباشرة
+    if (field.booleanValue !== undefined) return field.booleanValue;
+    return Boolean(field);
   }
 
   private getDefaultRestaurantDetails(): RestaurantDetails {
@@ -228,64 +280,8 @@ export class FirestoreService {
       restaurantName: 'غير محدد',
       address: '',
       logoURL: '',
-
-      whatsAppNumber: '',
-      facebookURL: '',
-      instagramURL: '',
-      websiteURL: '',
-      category: '',
       rating: 0,
-      features: {
-        delivery: false,
-        takeaway: false,
-        reservation: false
-      }
-    };
-  }
-  private extractMenuData(menuData: any): RestaurantMenu {
-    if (!menuData) {
-      return { categories: [], categories_en: [], items: [] };
-    }
-
-    let items: MenuItem[] = [];
-
-    if (menuData.items && Array.isArray(menuData.items)) {
-      items = menuData.items;
-    } else if (menuData.menuItems && Array.isArray(menuData.menuItems)) {
-      items = menuData.menuItems;
-    } else {
-      const fields = menuData.fields || menuData;
-      for (const key in fields) {
-        if (Array.isArray(fields[key])) {
-          items = fields[key];
-          break;
-        }
-      }
-    }
-
-    // تصفية العناصر النشطة فقط
-    const activeItems = items.filter(item =>
-      item && item.show !== false && item.name && item.category
-    );
-
-    // استخراج الفئات العربية
-    const categories = [...new Set(
-      activeItems
-        .map(item => item.category?.trim())
-        .filter(category => category && category !== '')
-    )];
-
-    // استخراج الفئات الإنجليزية
-const categories_en = [...new Set(
-  activeItems
-    .map(item => item.category_en?.trim() ?? '')
-    .filter(category => category !== '')
-)];
-
-    return {
-      categories: categories,
-      categories_en: categories_en,
-      items: activeItems
+      features: {}
     };
   }
 }

@@ -29,20 +29,20 @@
   @apply flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300;
 }
 
-/* Animation */
+/* Animation for menu items and branches */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
+  animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   opacity: 0;
 }
 
@@ -53,4 +53,89 @@
 
 .z-50 {
   z-index: 50 !important;
+}
+
+/* Branches Section Enhancements */
+section {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Hover effects for branch cards */
+.branch-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+}
+
+/* تحسينات للعرض على الشاشات الصغيرة */
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .grid {
+    gap: 1rem;
+  }
+
+  /* تقليل padding في بطاقات الأفرع على الموبايل */
+  section .p-6 {
+    padding: 1rem;
+  }
+
+  /* تقليل حجم الأزرار على الموبايل */
+  .social-link {
+    @apply px-3 py-1.5 text-xs;
+  }
+}
+
+/* تحسينات للطباعة (اختياري) */
+@media print {
+  .fixed {
+    display: none !important;
+  }
+
+  .social-link {
+    display: none !important;
+  }
+
+  section {
+    break-inside: avoid;
+  }
+}
+
+/* تأثيرات إضافية للتفاعل */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
+}
+
+.group:hover .group-hover\:scale-150 {
+  transform: scale(1.5);
+}
+
+/* تحسين الأداء */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* تحسين التمرير السلس */
+html {
+  scroll-behavior: smooth;
+}
+
+/* إزالة outline عند النقر للمستخدمين غير المتصفحين بالكيبورد */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* تحسين الـ focus للمستخدمين بالكيبورد */
+*:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
 }
