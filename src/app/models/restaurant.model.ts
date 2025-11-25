@@ -16,6 +16,13 @@ export interface RestaurantDetails {
     takeaway?: boolean;
     reservation?: boolean;
   };
+  branches?: {
+    id: string;
+    address: string;
+    latitude?: number;
+    longitude?: number;
+    whatsAppNumber?: string;
+  }[];
 }
 
 export interface MenuItem {
