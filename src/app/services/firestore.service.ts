@@ -95,7 +95,9 @@ export class FirestoreService {
     return this.fetchFromGAS<any>('getRestaurantData', { id }).pipe(
       map(response => {
         if (response.status === 'success' && response.data) {
+          console.log();
           return this.transformFirestoreData(response.data);
+
         }
         return null;
       }),
@@ -152,6 +154,8 @@ export class FirestoreService {
       category: this.getStringValue(fields.category) || '',
       rating: this.getNumberValue(fields.rating),
 
+    longitude: detailsData.longitude || undefined,
+    latitude: detailsData.latitude || undefined,
       // ✅ استدعاء الدالة الجديدة لمعالجة الفروع
       branches: this.extractBranches(rawBranches),
 
