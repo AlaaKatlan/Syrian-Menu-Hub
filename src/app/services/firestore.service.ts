@@ -201,7 +201,58 @@ export class FirestoreService {
     }).filter(b => b.address && b.address !== ''); // تصفية الفروع الفارغة
   }
 
-  private extractMenuData(menuData: any): RestaurantMenu {
+  // private extractMenuData(menuData: any): RestaurantMenu {
+  //   if (!menuData) {
+  //     return { categories: [], categories_en: [], items: [] };
+  //   }
+
+  //   let items: MenuItem[] = [];
+
+  //   // محاولة قراءة العناصر بناءً على شكل البيانات
+  //   if (menuData.items && Array.isArray(menuData.items)) {
+  //     items = menuData.items; // JSON بسيط
+  //   } else if (menuData.fields?.items?.arrayValue?.values) {
+  //      // Firestore Raw Structure
+  //      items = menuData.fields.items.arrayValue.values.map((i: any) => {
+  //        const f = i.mapValue?.fields || i;
+  //        return {
+  //          name: this.getStringValue(f.name),
+  //          name_en: this.getStringValue(f.name_en),
+  //          description: this.getStringValue(f.description),
+  //          description_en: this.getStringValue(f.description_en),
+  //          price: this.getNumberValue(f.price),
+  //          category: this.getStringValue(f.category),
+  //          category_en: this.getStringValue(f.category_en),
+  //          image: this.getStringValue(f.image),
+  //          show: this.getBooleanValue(f.show)
+  //        };
+  //      });
+  //   }
+
+  //   // تصفية العناصر المعروضة فقط
+  //   const activeItems = items.filter(item => item && item.show !== false && item.name);
+
+  //   // استخراج الفئات الفريدة (عربي)
+  //   const categories = [...new Set(
+  //     activeItems
+  //       .map(i => i.category?.trim())
+  //       .filter((c): c is string => !!c) // ✅ استخدام Type Predicate
+  //   )];
+
+  //   // استخراج الفئات الفريدة (إنجليزي) - وهنا كان الخطأ
+  //   const categories_en = [...new Set(
+  //     activeItems
+  //       .map(i => i.category_en?.trim())
+  //       .filter((c): c is string => !!c) // ✅ هذا السطر يخبر TS أن الناتج نص حصراً
+  //   )];
+
+  //   return {
+  //     categories,
+  //     categories_en,
+  //     items: activeItems
+  //   };
+  // }
+private extractMenuData(menuData: any): RestaurantMenu {
     if (!menuData) {
       return { categories: [], categories_en: [], items: [] };
     }
@@ -210,22 +261,12 @@ export class FirestoreService {
 
     // محاولة قراءة العناصر بناءً على شكل البيانات
     if (menuData.items && Array.isArray(menuData.items)) {
-      items = menuData.items; // JSON بسيط
+      items = menuData.items.map((item: any) => this.transformMenuItem(item));
     } else if (menuData.fields?.items?.arrayValue?.values) {
        // Firestore Raw Structure
        items = menuData.fields.items.arrayValue.values.map((i: any) => {
          const f = i.mapValue?.fields || i;
-         return {
-           name: this.getStringValue(f.name),
-           name_en: this.getStringValue(f.name_en),
-           description: this.getStringValue(f.description),
-           description_en: this.getStringValue(f.description_en),
-           price: this.getNumberValue(f.price),
-           category: this.getStringValue(f.category),
-           category_en: this.getStringValue(f.category_en),
-           image: this.getStringValue(f.image),
-           show: this.getBooleanValue(f.show)
-         };
+         return this.transformMenuItem(f);
        });
     }
 
@@ -236,14 +277,14 @@ export class FirestoreService {
     const categories = [...new Set(
       activeItems
         .map(i => i.category?.trim())
-        .filter((c): c is string => !!c) // ✅ استخدام Type Predicate
+        .filter((c): c is string => !!c)
     )];
 
-    // استخراج الفئات الفريدة (إنجليزي) - وهنا كان الخطأ
+    // استخراج الفئات الفريدة (إنجليزي)
     const categories_en = [...new Set(
       activeItems
         .map(i => i.category_en?.trim())
-        .filter((c): c is string => !!c) // ✅ هذا السطر يخبر TS أن الناتج نص حصراً
+        .filter((c): c is string => !!c)
     )];
 
     return {
@@ -253,6 +294,46 @@ export class FirestoreService {
     };
   }
 
+  private transformMenuItem(itemData: any): MenuItem {
+    const f = itemData.mapValue?.fields || itemData;
+
+    return {
+      name: this.getStringValue(f.name),
+      name_en: this.getStringValue(f.name_en),
+      description: this.getStringValue(f.description),
+      description_en: this.getStringValue(f.description_en),
+      price: this.getNumberValue(f.price),
+      category: this.getStringValue(f.category),
+      category_en: this.getStringValue(f.category_en),
+      image: this.getStringValue(f.image),
+      show: this.getBooleanValue(f.show),
+      options: this.extractMenuItemOptions(f.options)
+    };
+  }
+
+  private extractMenuItemOptions(optionsData: any): any[] {
+    if (!optionsData) return [];
+
+    let optionsArray: any[] = [];
+
+    // الحالة 1: بيانات قادمة بتنسيق Firestore ArrayValue
+    if (optionsData.arrayValue && optionsData.arrayValue.values) {
+      optionsArray = optionsData.arrayValue.values;
+    }
+    // الحالة 2: بيانات قادمة كمصفوفة JSON عادية
+    else if (Array.isArray(optionsData)) {
+      optionsArray = optionsData;
+    }
+
+    return optionsArray.map(opt => {
+      const fields = opt.mapValue?.fields || opt;
+      return {
+        name: this.getStringValue(fields.name),
+        name_en: this.getStringValue(fields.name_en),
+        price: this.getNumberValue(fields.price)
+      };
+    }).filter(opt => opt.name && opt.price > 0);
+  }
   // =================================================================
   // ===================    DATA TYPE HELPERS    =====================
   // =================================================================

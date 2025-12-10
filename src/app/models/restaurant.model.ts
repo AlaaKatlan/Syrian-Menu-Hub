@@ -35,8 +35,14 @@ export interface MenuItem {
   category_en?: string;
   show: boolean;
   image?: string;
-}
+    options?: MenuItemOption[];
 
+}
+export interface MenuItemOption {
+  name: string;
+  name_en?: string;
+  price: number;
+}
 export interface RestaurantMenu {
   categories: string[];
   categories_en?: string[];

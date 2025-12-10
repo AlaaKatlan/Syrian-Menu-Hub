@@ -24,6 +24,7 @@ export class RestaurantComponent {
 
   selectedCategory = signal<string>('');
   currentLanguage = signal<'ar' | 'en'>('ar');
+  expandedItems = signal<Set<string>>(new Set());
 
   constructor() {
     // للتتبع والتأكد من عمل تبديل اللغة
@@ -107,6 +108,26 @@ export class RestaurantComponent {
     console.log('🔄 تبديل اللغة من', current, 'إلى', newLang);
     this.currentLanguage.set(newLang);
     this.selectedCategory.set('');
+  }
+
+  toggleItemExpansion(item: MenuItem) {
+    // فقط للعناصر التي لديها خيارات
+    if (!item.options || item.options.length === 0) return;
+
+    const expanded = this.expandedItems();
+    const newExpanded = new Set(expanded);
+
+    if (newExpanded.has(item.name)) {
+      newExpanded.delete(item.name);
+    } else {
+      newExpanded.add(item.name);
+    }
+
+    this.expandedItems.set(newExpanded);
+  }
+
+  isItemExpanded(item: MenuItem): boolean {
+    return this.expandedItems().has(item.name);
   }
 
   getItemName(item: MenuItem): string {
