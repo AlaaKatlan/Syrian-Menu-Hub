@@ -154,8 +154,8 @@ export class FirestoreService {
       category: this.getStringValue(fields.category) || '',
       rating: this.getNumberValue(fields.rating),
 
-    longitude: detailsData.longitude || undefined,
-    latitude: detailsData.latitude || undefined,
+      longitude: detailsData.longitude || undefined,
+      latitude: detailsData.latitude || undefined,
       // ✅ استدعاء الدالة الجديدة لمعالجة الفروع
       branches: this.extractBranches(rawBranches),
 
@@ -252,7 +252,7 @@ export class FirestoreService {
   //     items: activeItems
   //   };
   // }
-private extractMenuData(menuData: any): RestaurantMenu {
+  private extractMenuData(menuData: any): RestaurantMenu {
     if (!menuData) {
       return { categories: [], categories_en: [], items: [] };
     }
@@ -263,11 +263,11 @@ private extractMenuData(menuData: any): RestaurantMenu {
     if (menuData.items && Array.isArray(menuData.items)) {
       items = menuData.items.map((item: any) => this.transformMenuItem(item));
     } else if (menuData.fields?.items?.arrayValue?.values) {
-       // Firestore Raw Structure
-       items = menuData.fields.items.arrayValue.values.map((i: any) => {
-         const f = i.mapValue?.fields || i;
-         return this.transformMenuItem(f);
-       });
+      // Firestore Raw Structure
+      items = menuData.fields.items.arrayValue.values.map((i: any) => {
+        const f = i.mapValue?.fields || i;
+        return this.transformMenuItem(f);
+      });
     }
 
     // تصفية العناصر المعروضة فقط
@@ -294,10 +294,12 @@ private extractMenuData(menuData: any): RestaurantMenu {
     };
   }
 
+
   private transformMenuItem(itemData: any): MenuItem {
     const f = itemData.mapValue?.fields || itemData;
 
-    return {
+    const item: MenuItem = {
+      id: this.getStringValue(f.id), // ✅ إضافة الـ ID
       name: this.getStringValue(f.name),
       name_en: this.getStringValue(f.name_en),
       description: this.getStringValue(f.description),
@@ -306,9 +308,16 @@ private extractMenuData(menuData: any): RestaurantMenu {
       category: this.getStringValue(f.category),
       category_en: this.getStringValue(f.category_en),
       image: this.getStringValue(f.image),
-      show: this.getBooleanValue(f.show),
-      options: this.extractMenuItemOptions(f.options)
+      show: this.getBooleanValue(f.show)
     };
+
+    // ✅ معالجة الـ options بشكل صحيح
+    const extractedOptions = this.extractMenuItemOptions(f.options);
+    if (extractedOptions.length > 0) {
+      item.options = extractedOptions;
+    }
+
+    return item;
   }
 
   private extractMenuItemOptions(optionsData: any): any[] {
@@ -316,16 +325,16 @@ private extractMenuData(menuData: any): RestaurantMenu {
 
     let optionsArray: any[] = [];
 
-    // الحالة 1: بيانات قادمة بتنسيق Firestore ArrayValue
+    // ✅ الحالة 1: بيانات Firestore ArrayValue
     if (optionsData.arrayValue && optionsData.arrayValue.values) {
       optionsArray = optionsData.arrayValue.values;
     }
-    // الحالة 2: بيانات قادمة كمصفوفة JSON عادية
+    // ✅ الحالة 2: مصفوفة JSON عادية
     else if (Array.isArray(optionsData)) {
       optionsArray = optionsData;
     }
 
-    return optionsArray.map(opt => {
+    const options = optionsArray.map(opt => {
       const fields = opt.mapValue?.fields || opt;
       return {
         name: this.getStringValue(fields.name),
@@ -333,6 +342,12 @@ private extractMenuData(menuData: any): RestaurantMenu {
         price: this.getNumberValue(fields.price)
       };
     }).filter(opt => opt.name && opt.price > 0);
+
+    if (options.length > 0) {
+      console.log('✅ Options extracted:', options);
+    }
+
+    return options;
   }
   // =================================================================
   // ===================    DATA TYPE HELPERS    =====================

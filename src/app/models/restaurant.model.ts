@@ -26,6 +26,7 @@ export interface RestaurantDetails {
 }
 
 export interface MenuItem {
+  id?: string;
  name: string;
   name_en?: string;
   description: string;

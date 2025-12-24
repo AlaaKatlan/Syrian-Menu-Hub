@@ -71,11 +71,11 @@ export class RestaurantComponent {
 
   filteredItems = computed<MenuItem[]>(() => {
     const data = this.restaurant();
-    const category = this.selectedCategory();
+     const category = this.selectedCategory();
     if (!data?.menu?.items) return [];
 
     let items = data.menu.items;
-
+ console.log(items);
     if (category) {
       items = items.filter(item => {
         return item.category === category || item.category_en === category;
