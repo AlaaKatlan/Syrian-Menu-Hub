@@ -44,29 +44,83 @@ export class RestaurantComponent {
    * @param item العنصر المراد إضافته
    * @param selectedOption الخيار المحدد (اختياري)
    */
-  addToCart(item: MenuItem, selectedOption?: any) {
+ addToCart(item: MenuItem, selectedOption?: any, event?: Event) {
     const isArabic = this.currentLanguage() === 'ar';
 
-    // تجهيز كائن المنتج للسلة
-    // ملاحظة: تأكد أن هيكل البيانات هنا يطابق ما يتوقعه CartService
+    // تنفيذ أنيميشن الطيران
+    if (event) {
+      this.animateFlyingItem(event);
+    }
+
     const cartItem = {
-      id: item.name + (selectedOption ? '-' + selectedOption.name : ''), // توليد ID فريد
+      id: item.name + (selectedOption ? '-' + selectedOption.name : ''),
       name: this.getItemName(item),
       price: selectedOption ? selectedOption.price : item.price,
       image: item.image,
       quantity: 1,
-      // إذا كان هناك خيار، نمرره كتفاصيل إضافية
       selectedOption: selectedOption ? {
         name: isArabic ? selectedOption.name : (selectedOption.name_en || selectedOption.name),
         price: selectedOption.price
       } : undefined
     };
 
-    // إضافة للسلة
     this.cartService.addToCart(cartItem);
+    // ⚠️ لاحظ: لم نعد نستدعي toggleCart() هنا
+  }
 
-    // فتح السلة تلقائياً عند الإضافة (اختياري)
-    this.cartService.toggleCart();
+  // ✅ دالة أنيميشن الطيران للسلة
+  animateFlyingItem(event: Event) {
+    const target = event.target as HTMLElement;
+    // البحث عن أقرب زر تم الضغط عليه
+    const button = target.closest('button');
+    if (!button) return;
+
+    // الحصول على إحداثيات الزر الذي تم ضغطه
+    const rect = button.getBoundingClientRect();
+
+    // إنشاء دائرة صغيرة تطير (أو صورة)
+    const flyingObj = document.createElement('div');
+    flyingObj.style.position = 'fixed';
+    flyingObj.style.left = `${rect.left + rect.width / 2}px`;
+    flyingObj.style.top = `${rect.top + rect.height / 2}px`;
+    flyingObj.style.width = '20px';
+    flyingObj.style.height = '20px';
+    flyingObj.style.borderRadius = '50%';
+    flyingObj.style.backgroundColor = '#0d9488'; // لون التيل (Teal)
+    flyingObj.style.zIndex = '9999';
+    flyingObj.style.pointerEvents = 'none';
+    flyingObj.style.transition = 'all 0.8s cubic-bezier(0.19, 1, 0.22, 1)';
+    flyingObj.style.boxShadow = '0 0 10px rgba(13, 148, 136, 0.5)';
+
+    document.body.appendChild(flyingObj);
+
+    // البحث عن أيقونة السلة (زر السلة العائم)
+    // ملاحظة: تأكد أن زر السلة في cart-drawer يملك id="cart-fab"
+    const cartBtn = document.getElementById('cart-fab');
+
+    if (cartBtn) {
+      const cartRect = cartBtn.getBoundingClientRect();
+
+      // تأخير بسيط لتفعيل الترانزيشن
+      requestAnimationFrame(() => {
+        flyingObj.style.left = `${cartRect.left + cartRect.width / 2}px`;
+        flyingObj.style.top = `${cartRect.top + cartRect.height / 2}px`;
+        flyingObj.style.transform = 'scale(0.2)';
+        flyingObj.style.opacity = '0.5';
+      });
+    } else {
+       // في حال لم يجد الزر، يطير للأسفل اليمين
+       requestAnimationFrame(() => {
+        flyingObj.style.top = `${window.innerHeight - 50}px`;
+        flyingObj.style.left = `${window.innerWidth - 50}px`;
+        flyingObj.style.opacity = '0';
+      });
+    }
+
+    // حذف العنصر بعد انتهاء الحركة
+    setTimeout(() => {
+      flyingObj.remove();
+    }, 800);
   }
 
   // ==================== منطق العرض واللغة ====================

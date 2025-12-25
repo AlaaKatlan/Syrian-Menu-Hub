@@ -8,10 +8,11 @@ export interface RestaurantDetails {
   instagramURL?: string;
   websiteURL?: string;
   longitude?: number;
-  latitude?: number;
+  latitude?: number; currencySymbol?: string;
   delivery?: boolean;
   category?: string;
   rating?: number;
+
   features?: {
     delivery?: boolean;
     takeaway?: boolean;
@@ -28,7 +29,7 @@ export interface RestaurantDetails {
 
 export interface MenuItem {
   id?: string;
- name: string;
+  name: string;
   name_en?: string;
   description: string;
   description_en?: string;
@@ -37,7 +38,7 @@ export interface MenuItem {
   category_en?: string;
   show: boolean;
   image?: string;
-    options?: MenuItemOption[];
+  options?: MenuItemOption[];
 
 }
 export interface MenuItemOption {
@@ -61,5 +62,6 @@ export interface CartItem {
   price: number;
   image?: string;
   quantity: number;
+  notes?: string;
   selectedOption?: { name: string; price: number };
 }

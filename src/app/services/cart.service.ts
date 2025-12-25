@@ -1,68 +1,50 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { CartItem } from '../models/restaurant.model';
-
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
-  // ==================== حالة السلة ====================
-  // signal للتحكم بظهور السلة (مفتوحة/مغلقة)
   isOpen = signal<boolean>(false);
-
-  // signal لقائمة العناصر
   cartItems = signal<CartItem[]>([]);
 
-  // ==================== الحسابات ====================
-
-  // حساب السعر الكلي
   totalPrice = computed(() => {
     return this.cartItems().reduce((total, item) => total + (item.price * item.quantity), 0);
   });
 
-  // حساب عدد العناصر الكلي
   totalItemsCount = computed(() => {
     return this.cartItems().reduce((count, item) => count + item.quantity, 0);
   });
 
-  // ==================== التحكم بالواجهة ====================
-
-  // تبديل حالة السلة (فتح/إغلاق)
   toggleCart() {
     this.isOpen.update(v => !v);
   }
 
-  // فتح السلة
   openCart() {
     this.isOpen.set(true);
   }
 
-  // إغلاق السلة
   closeCart() {
     this.isOpen.set(false);
   }
 
-  // ==================== إدارة المنتجات ====================
-
   addToCart(product: any) {
     const currentItems = this.cartItems();
-    // المنتج يعتبر فريداً بناءً على الـ ID الذي قمنا بتوليده في الكومبوننت (يتضمن اسم الخيار)
     const existingItem = currentItems.find(item => item.id === product.id);
 
     if (existingItem) {
-      // إذا المنتج موجود، نزيد الكمية
       this.updateQuantity(product.id, existingItem.quantity + 1);
     } else {
-      // إضافة منتج جديد
       this.cartItems.set([...currentItems, {
         id: product.id,
         name: product.name,
         price: product.price,
         image: product.image,
         quantity: 1,
-        // نقوم بتخزين تفاصيل الخيار إذا وجدت لاستخدامها في رسالة الواتساب
-        selectedOption: product.selectedOption
-      } as CartItem]); // تأكد من تحديث مودل CartItem ليقبل selectedOption اختياري
+        selectedOption: product.selectedOption,
+        notes: '' // ✅ تهيئة الملاحظات كنص فارغ
+      } as CartItem]);
     }
+    // ❌ حذفنا this.toggleCart() عشان ما تفتح السلة تلقائياً
   }
 
   removeFromCart(itemId: string) {
@@ -74,17 +56,21 @@ export class CartService {
       this.removeFromCart(itemId);
       return;
     }
-
     this.cartItems.update(items =>
       items.map(item => item.id === itemId ? { ...item, quantity } : item)
+    );
+  }
+
+  // ✅ دالة جديدة لتحديث ملاحظات عنصر محدد
+  updateNotes(itemId: string, notes: string) {
+    this.cartItems.update(items =>
+      items.map(item => item.id === itemId ? { ...item, notes } : item)
     );
   }
 
   clearCart() {
     this.cartItems.set([]);
   }
-
-  // ==================== واتساب ====================
 
   generateWhatsAppLink(restaurantPhone: string): string {
     const items = this.cartItems();
@@ -93,10 +79,11 @@ export class CartService {
     let message = `*مرحباً، أود طلب ما يلي:*%0A%0A`;
 
     items.forEach(item => {
-      // إضافة اسم الخيار للرسالة إذا وجد (مثال: شاورما [كبير])
       const optionText = item.selectedOption ? ` [${item.selectedOption.name}]` : '';
+      // ✅ إضافة الملاحظة للرسالة إن وجدت
+      const notesText = item.notes ? `%0A   └ 📝 ملاحظة: ${item.notes}` : '';
 
-      message += `- ${item.quantity}x ${item.name}${optionText} (${item.price * item.quantity} ل.س)%0A`;
+      message += `- ${item.quantity}x ${item.name}${optionText} (${item.price * item.quantity} ل.س)${notesText}%0A`;
     });
 
     message += `%0A*------------------*`;
@@ -104,7 +91,6 @@ export class CartService {
     message += `%0A*------------------*`;
     message += `%0Aشكراً!`;
 
-    // استخدام encodeURIComponent لضمان عدم تكسر الرابط بسبب الرموز الخاصة
     return `https://wa.me/${restaurantPhone}?text=${message}`;
   }
 }

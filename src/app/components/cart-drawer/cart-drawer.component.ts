@@ -2,23 +2,26 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CartService } from '../../services/cart.service';
 import { animate, style, transition, trigger } from '@angular/animations';
+import { FormsModule } from '@angular/forms'; // ✅ ضروري من أجل ngModel
 
 @Component({
   selector: 'app-cart-drawer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule], // ✅ أضفنا FormsModule
   templateUrl: './cart-drawer.component.html',
   styleUrls: ['./cart-drawer.component.scss'],
   animations: [
-    trigger('slideInOut', [
+    // ✅ أنيميشن للمودال (Zoom In / Scale)
+    trigger('modalScale', [
       transition(':enter', [
-        style({ transform: 'translateX(100%)', opacity: 0 }),
-        animate('400ms cubic-bezier(0.25, 0.8, 0.25, 1)', style({ transform: 'translateX(0)', opacity: 1 }))
+        style({ transform: 'scale(0.9)', opacity: 0 }),
+        animate('200ms ease-out', style({ transform: 'scale(1)', opacity: 1 }))
       ]),
       transition(':leave', [
-        animate('300ms ease-in', style({ transform: 'translateX(100%)', opacity: 0 }))
+        animate('150ms ease-in', style({ transform: 'scale(0.9)', opacity: 0 }))
       ])
     ]),
+    // أنيميشن الخلفية
     trigger('fadeIn', [
       transition(':enter', [
         style({ opacity: 0 }),
@@ -32,26 +35,22 @@ import { animate, style, transition, trigger } from '@angular/animations';
 })
 export class CartDrawerComponent {
   cartService = inject(CartService);
-
   @Input() restaurantDetails: any;
 
-  // تم إزالة isOpen المحلي، سنستخدم cartService.isOpen() في الـ HTML
+  // ... (باقي الدوال checkout و closeCart كما هي)
 
   closeCart() {
     this.cartService.closeCart();
   }
 
   checkout() {
-    if (!this.restaurantDetails?.whatsAppNumber) {
+      // نفس الكود السابق
+      if (!this.restaurantDetails?.whatsAppNumber) {
       alert('رقم الواتساب غير متوفر لهذا الفرع!');
       return;
     }
-
     const phone = this.restaurantDetails.whatsAppNumber;
-    // توليد الرابط باستخدام الدالة الموجودة في السيرفس
     const link = this.cartService.generateWhatsAppLink(phone);
-
-    // فتح الرابط في نافذة جديدة
     if (link) {
       window.open(link, '_blank');
     } else {
