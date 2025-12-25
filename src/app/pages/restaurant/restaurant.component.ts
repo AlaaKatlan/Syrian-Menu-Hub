@@ -5,17 +5,20 @@ import { FirestoreService } from '../../services/firestore.service';
 import { switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { MenuItem } from '../../models/restaurant.model';
+import { CartService } from '../../services/cart.service';
+import { CartDrawerComponent } from '../../components/cart-drawer/cart-drawer.component';
 
 @Component({
   selector: 'app-restaurant',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CartDrawerComponent],
   templateUrl: './restaurant.component.html',
   styleUrls: ['./restaurant.component.scss']
 })
 export class RestaurantComponent {
   private route = inject(ActivatedRoute);
   private firestoreService = inject(FirestoreService);
+  cartService = inject(CartService); // Public ليتم الوصول لها
 
   private restaurantData$ = this.route.params.pipe(
     switchMap(params => this.firestoreService.getRestaurantData(params['id']))
@@ -25,26 +28,59 @@ export class RestaurantComponent {
   selectedCategory = signal<string>('');
   currentLanguage = signal<'ar' | 'en'>('ar');
   expandedItems = signal<Set<string>>(new Set());
-
-  constructor() {
+   constructor() {
     // للتتبع والتأكد من عمل تبديل اللغة
     effect(() => {
       console.log('🌐 اللغة الحالية:', this.currentLanguage());
+      console.log(this.restaurant());
     });
+
   }
+
+  // ==================== دوال العربة (Cart) ====================
+
+  /**
+   * دالة إضافة عنصر للسلة
+   * @param item العنصر المراد إضافته
+   * @param selectedOption الخيار المحدد (اختياري)
+   */
+  addToCart(item: MenuItem, selectedOption?: any) {
+    const isArabic = this.currentLanguage() === 'ar';
+
+    // تجهيز كائن المنتج للسلة
+    // ملاحظة: تأكد أن هيكل البيانات هنا يطابق ما يتوقعه CartService
+    const cartItem = {
+      id: item.name + (selectedOption ? '-' + selectedOption.name : ''), // توليد ID فريد
+      name: this.getItemName(item),
+      price: selectedOption ? selectedOption.price : item.price,
+      image: item.image,
+      quantity: 1,
+      // إذا كان هناك خيار، نمرره كتفاصيل إضافية
+      selectedOption: selectedOption ? {
+        name: isArabic ? selectedOption.name : (selectedOption.name_en || selectedOption.name),
+        price: selectedOption.price
+      } : undefined
+    };
+
+    // إضافة للسلة
+    this.cartService.addToCart(cartItem);
+
+    // فتح السلة تلقائياً عند الإضافة (اختياري)
+    this.cartService.toggleCart();
+  }
+
+  // ==================== منطق العرض واللغة ====================
 
   // التحقق إذا المطعم يدعم الإنجليزية
   hasEnglishSupport = computed(() => {
     const data = this.restaurant();
     if (!data?.menu?.items || data.menu.items.length === 0) {
-      console.log('❌ لا توجد عناصر في القائمة');
       return false;
     }
 
     const hasEn = data.menu.items.some(item =>
       item.name_en && item.name_en.trim() !== ''
     );
-    console.log('🔍 هل يدعم الإنجليزية:', hasEn);
     return hasEn;
   });
 
@@ -65,17 +101,16 @@ export class RestaurantComponent {
         .filter(c => c && c.trim() !== '')
     )];
 
-    console.log('📂 الفئات المعروضة:', categories);
     return categories;
   });
 
   filteredItems = computed<MenuItem[]>(() => {
     const data = this.restaurant();
-     const category = this.selectedCategory();
+    const category = this.selectedCategory();
     if (!data?.menu?.items) return [];
 
     let items = data.menu.items;
- console.log(items);
+
     if (category) {
       items = items.filter(item => {
         return item.category === category || item.category_en === category;
@@ -90,14 +125,6 @@ export class RestaurantComponent {
     return this.restaurant()?.details.branches?.length || 0;
   });
 
-  branchesWithWhatsApp = computed(() => {
-    return this.restaurant()?.details.branches?.filter(b => b.whatsAppNumber).length || 0;
-  });
-
-  branchesWithLocation = computed(() => {
-    return this.restaurant()?.details.branches?.filter(b => b.latitude && b.longitude).length || 0;
-  });
-
   filterByCategory(category: string) {
     this.selectedCategory.set(category);
   }
@@ -105,7 +132,6 @@ export class RestaurantComponent {
   toggleLanguage() {
     const current = this.currentLanguage();
     const newLang = current === 'ar' ? 'en' : 'ar';
-    console.log('🔄 تبديل اللغة من', current, 'إلى', newLang);
     this.currentLanguage.set(newLang);
     this.selectedCategory.set('');
   }
@@ -146,14 +172,6 @@ export class RestaurantComponent {
     return item.description || '';
   }
 
-  isEnglish(): boolean {
-    return this.currentLanguage() === 'en';
-  }
-
-  isArabic(): boolean {
-    return this.currentLanguage() === 'ar';
-  }
-
   getImageURL(url?: string): string {
     if (!url) return '';
 
@@ -164,7 +182,7 @@ export class RestaurantComponent {
         url.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
 
       if (idMatch) {
-        return `https://lh3.googleusercontent.com/d/${idMatch}=w512?authuser=0`;
+        return `https://lh3.googleusercontent.com/d/${idMatch}=w512`;
       }
       return '';
     }
@@ -178,14 +196,6 @@ export class RestaurantComponent {
 
   // ==================== دوال مساعدة للأفرع ====================
 
-  /**
-   * حساب المسافة بين نقطتين جغرافيتين باستخدام صيغة Haversine
-   * @param lat1 خط العرض الأول
-   * @param lon1 خط الطول الأول
-   * @param lat2 خط العرض الثاني
-   * @param lon2 خط الطول الثاني
-   * @returns المسافة بالكيلومتر
-   */
   calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371; // نصف قطر الأرض بالكيلومتر
     const dLat = this.deg2rad(lat2 - lat1);
@@ -199,110 +209,30 @@ export class RestaurantComponent {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
 
-    return Math.round(distance * 10) / 10; // تقريب لرقم عشري واحد
+    return Math.round(distance * 10) / 10;
   }
 
   private deg2rad(deg: number): number {
     return deg * (Math.PI / 180);
   }
 
-  /**
-   * الحصول على موقع المستخدم الحالي
-   */
   getUserLocation(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(new Error('Geolocation is not supported'));
         return;
       }
-
       navigator.geolocation.getCurrentPosition(resolve, reject);
     });
   }
 
   /**
-   * ترتيب الأفرع حسب القرب من موقع المستخدم
-   */
-  async sortBranchesByDistance() {
-    try {
-      const position = await this.getUserLocation();
-      const userLat = position.coords.latitude;
-      const userLon = position.coords.longitude;
-
-      const data = this.restaurant();
-      if (!data?.details.branches) return;
-
-      const branchesWithDistance = data.details.branches.map(branch => {
-        if (branch.latitude && branch.longitude) {
-          const distance = this.calculateDistance(
-            userLat,
-            userLon,
-            branch.latitude,
-            branch.longitude
-          );
-          return { ...branch, distance };
-        }
-        return { ...branch, distance: Infinity };
-      });
-
-      // ترتيب الأفرع حسب المسافة
-      branchesWithDistance.sort((a, b) =>
-        (a.distance || Infinity) - (b.distance || Infinity)
-      );
-
-      console.log('الأفرع مرتبة حسب القرب:', branchesWithDistance);
-
-    } catch (error) {
-      console.log('لم يتم تفعيل خدمة الموقع:', error);
-    }
-  }
-
-  /**
    * فتح خرائط جوجل للملاحة إلى الفرع
    */
-openNavigation(lat: number, lon: number) {
-    // ✅ تم تصحيح رابط Google Maps ليعمل بشكل سليم
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+  openNavigation(lat: number, lon: number) {
+    // تم استخدام رابط عالمي يعمل على كافة الأجهزة
+    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
     window.open(url, '_blank');
   }
 
-  /**
-   * نسخ عنوان الفرع إلى الحافظة
-   */
-  async copyAddress(address: string) {
-    try {
-      await navigator.clipboard.writeText(address);
-      console.log('تم نسخ العنوان');
-      // يمكنك إضافة إشعار للمستخدم هنا (مثل Toast notification)
-    } catch (error) {
-      console.error('فشل في نسخ العنوان:', error);
-    }
-  }
-
-  /**
-   * مشاركة معلومات الفرع عبر Web Share API
-   */
-  async shareBranch(branchId: string, address: string) {
-    const data = this.restaurant();
-    if (!data) return;
-
-    const shareData = {
-      title: `${data.details.restaurantName} - فرع ${branchId}`,
-      text: `العنوان: ${address}`,
-      url: window.location.href
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        console.log('تمت المشاركة بنجاح');
-      } else {
-        // fallback: نسخ الرابط
-        await navigator.clipboard.writeText(window.location.href);
-        console.log('تم نسخ الرابط');
-      }
-    } catch (error) {
-      console.error('فشل في المشاركة:', error);
-    }
-  }
 }

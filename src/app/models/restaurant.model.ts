@@ -9,8 +9,9 @@ export interface RestaurantDetails {
   websiteURL?: string;
   longitude?: number;
   latitude?: number;
-  category?: string; // ⬅️ أضفنا هذا
-  rating?: number;   // ⬅️ وأضفنا التقييم أيضاً
+  delivery?: boolean;
+  category?: string;
+  rating?: number;
   features?: {
     delivery?: boolean;
     takeaway?: boolean;
@@ -53,4 +54,12 @@ export interface RestaurantMenu {
 export interface CombinedRestaurantData {
   details: RestaurantDetails;
   menu: RestaurantMenu;
+}
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+  quantity: number;
+  selectedOption?: { name: string; price: number };
 }

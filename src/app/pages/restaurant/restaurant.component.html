@@ -1,7 +1,10 @@
+<app-cart-drawer
+  [restaurantDetails]="restaurant()?.details">
+</app-cart-drawer>
+
 @if (restaurant(); as data) {
 <div class="min-h-screen bg-gray-100">
 
-  <!-- زر تبديل اللغة - منفصل على اليسار -->
   @if (hasEnglishSupport()) {
   <div class="fixed top-5 left-5 z-50">
     <button type="button" (click)="toggleLanguage()"
@@ -17,7 +20,6 @@
   </div>
   }
 
-  <!-- هيدر المطعم -->
   <div class="bg-white pt-24 pb-12 shadow-sm">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
       <img alt="" [src]="getImageURL(data.details.logoURL)" [alt]="data.details.restaurantName + ' Logo'"
@@ -29,18 +31,15 @@
         </h1>
         <p class="mt-2 text-base text-gray-500">{{ data.details.address }}</p>
 
-        <!-- روابط التواصل -->
         <div class="mt-6 flex justify-center items-center flex-wrap gap-4">
           @if(data.details.websiteURL) {
           <a [href]="data.details.websiteURL" target="_blank"
             class="social-link bg-yellow-50 text-yellow-700 hover:bg-yellow-200">
-            <!-- <img class="w-5 h-5" src="https://img.icons8.com/pulsar-gradient/50/star.png" alt="star"/> -->
             <img class="w-7 h-7" src="https://img.icons8.com/arcade/64/star.png" alt="star" />
             <span>
               {{ currentLanguage() === 'ar' ? 'التقييمات' : 'Rates' }}
             </span>
           </a>
-
           }
           @if(data.details.whatsAppNumber) {
           <a [href]="'https://wa.me/' + data.details.whatsAppNumber" target="_blank"
@@ -55,7 +54,6 @@
           @if(data.details.facebookURL) {
           <a [href]="data.details.facebookURL" target="_blank"
             class="social-link bg-blue-100 text-blue-700 hover:bg-blue-200">
-
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path
                 d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v2.385z" />
@@ -89,21 +87,17 @@
     </div>
   </div>
 
-  <!-- قسم الأفرع -->
   @if (data.details.branches && data.details.branches.length > 0) {
   <section
     class="bg-gradient-to-br from-gray-50 via-white to-teal-50/30 py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
     [dir]="currentLanguage() === 'en' ? 'ltr' : 'rtl'">
 
-    <!-- خلفية زخرفية -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       <div class="absolute top-20 -right-20 w-96 h-96 bg-teal-200/20 rounded-full blur-3xl"></div>
       <div class="absolute bottom-20 -left-20 w-96 h-96 bg-amber-200/20 rounded-full blur-3xl"></div>
     </div>
 
     <div class="container mx-auto max-w-7xl relative z-10">
-
-      <!-- عنوان القسم -->
       <div class="text-center mb-16">
         <div class="inline-flex items-center justify-center w-16 h-16">
           <img src="/images/branch.png" alt="Branch Network Icon" class="w-full h-full object-contain" loading="lazy">
@@ -126,17 +120,13 @@
         </p>
       </div>
 
-      <!-- شبكة الأفرع -->
       <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-8">
         @for (branch of data.details.branches; track branch.id; let i = $index) {
         <div
           class="group bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-gray-100 hover:border-teal-200 transform hover:-translate-y-2 animate-fade-in-up"
           [style.animation-delay]="i * 100 + 'ms'">
 
-          <!-- محتوى البطاقة -->
           <div class="p-6 space-y-5">
-
-            <!-- العنوان -->
             <div
               class="flex items-center gap-3 group/address hover:bg-gray-50 -mx-2 px-2 py-2 rounded-xl transition-colors">
               <div class="flex-shrink-0 mt-1">
@@ -154,7 +144,6 @@
               </div>
             </div>
 
-            <!-- الإجراءات -->
             <div class="grid grid-cols-2 gap-2 pt-2">
               @if (branch.whatsAppNumber) {
               <a [href]="'https://wa.me/' + branch.whatsAppNumber" target="_blank"
@@ -188,8 +177,6 @@
               }
             </div>
           </div>
-
-          <!-- شريط سفلي -->
           <div class="h-1.5 bg-gradient-to-r from-teal-500 via-amber-500 to-teal-500"></div>
         </div>
         }
@@ -198,10 +185,8 @@
   </section>
   }
 
-  <!-- قسم القائمة -->
   <div class="container-fluid mx-4 px-4 sm:px-6 lg:px-8 py-12" [dir]="currentLanguage() === 'en' ? 'ltr' : 'rtl'">
 
-    <!-- فلترة الفئات -->
     <div class="flex justify-center flex-wrap gap-3 mb-12">
       <button type="button" (click)="filterByCategory('')" [class.active-filter]="selectedCategory() === ''"
         class="filter-btn">
@@ -215,15 +200,13 @@
       }
     </div>
 
-    <!-- عناصر القائمة -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       @for (item of filteredItems(); track item.name; let i = $index) {
       <div (click)="toggleItemExpansion(item)" [class.ring-2]="isItemExpanded(item)"
         [class.ring-teal-500]="isItemExpanded(item)" [class.shadow-2xl]="isItemExpanded(item)"
-        class="bg-white rounded-xl shadow-md overflow-hidden transform hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in-up cursor-pointer"
+        class="bg-white rounded-xl shadow-md overflow-hidden transform hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in-up cursor-pointer group/item"
         [style.animation-delay]="i * 50 + 'ms'">
 
-        <!-- المحتوى الأساسي -->
         <div class="flex items-center">
           <img alt="" [src]="item.image ? getImageURL(item.image) : 'assets/no-image.png'" [alt]="getItemName(item)"
             class="w-40 h-40 object-cover flex-shrink-0" />
@@ -233,7 +216,6 @@
                 <h3 class="text-lg font-bold text-gray-800">{{ getItemName(item) }}</h3>
                 <p class="text-gray-500 text-sm mt-1">{{ getItemDescription(item) }}</p>
               </div>
-              <!-- أيقونة للعناصر التي لها خيارات -->
               @if (item.options && item.options.length > 0) {
               <div class="ml-2 flex-shrink-0">
                 <div
@@ -246,21 +228,31 @@
               </div>
               }
             </div>
-            <div class="mt-3">
+
+            <div class="mt-3 flex items-center justify-between">
               @if (!item.options || item.options.length === 0) {
-              <span class="text-md font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
-                {{ item.price | number : '1.0-0' }} {{ currentLanguage() === 'ar' ? 'ل.س' : 'SYP' }}
-              </span>
+                <span class="text-md font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
+                  {{ item.price | number : '1.0-0' }} {{ currentLanguage() === 'ar' ? 'ل.س' : 'SYP' }}
+                </span>
+
+                @if (data.details.delivery) {
+                  <button type="button"
+                          (click)="$event.stopPropagation(); addToCart(item)"
+                          class="bg-teal-600 hover:bg-teal-700 text-white rounded-full p-2 shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                }
               } @else {
-              <span class="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                {{ currentLanguage() === 'ar' ? 'اضغط لعرض الخيارات' : 'Click to view options' }}
-              </span>
+                <span class="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  {{ currentLanguage() === 'ar' ? 'اضغط لعرض الخيارات' : 'Click to view options' }}
+                </span>
               }
             </div>
           </div>
         </div>
 
-        <!-- قسم الخيارات (يظهر عند التوسيع) -->
         @if (item.options && item.options.length > 0 && isItemExpanded(item)) {
         <div
           class="border-t border-gray-100 bg-gradient-to-br from-teal-50/30 to-amber-50/30 px-5 py-4 animate-slide-down">
@@ -280,9 +272,22 @@
                   {{ currentLanguage() === 'ar' ? option.name : (option.name_en || option.name) }}
                 </span>
               </div>
-              <span class="text-md font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
-                {{ option.price | number : '1.0-0' }} {{ currentLanguage() === 'ar' ? 'ل.س' : 'SYP' }}
-              </span>
+
+              <div class="flex items-center gap-3">
+                <span class="text-md font-bold text-teal-600 bg-teal-50 px-3 py-1 rounded-full">
+                  {{ option.price | number : '1.0-0' }} {{ currentLanguage() === 'ar' ? 'ل.س' : 'SYP' }}
+                </span>
+
+                @if (data.details.delivery) {
+                  <button type="button"
+                          (click)="$event.stopPropagation(); addToCart(item, option)"
+                          class="text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-full p-1 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                }
+              </div>
             </div>
             }
           </div>
@@ -292,7 +297,6 @@
       }
     </div>
 
-    <!-- رسالة عند عدم وجود عناصر -->
     @if (filteredItems().length === 0) {
     <div class="text-center py-12">
       <p class="text-gray-500 text-lg">
