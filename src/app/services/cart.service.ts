@@ -1,5 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { CartItem } from '../models/restaurant.model';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -41,10 +42,9 @@ export class CartService {
         image: product.image,
         quantity: 1,
         selectedOption: product.selectedOption,
-        notes: '' // ✅ تهيئة الملاحظات كنص فارغ
+        notes: ''
       } as CartItem]);
     }
-    // ❌ حذفنا this.toggleCart() عشان ما تفتح السلة تلقائياً
   }
 
   removeFromCart(itemId: string) {
@@ -61,7 +61,6 @@ export class CartService {
     );
   }
 
-  // ✅ دالة جديدة لتحديث ملاحظات عنصر محدد
   updateNotes(itemId: string, notes: string) {
     this.cartItems.update(items =>
       items.map(item => item.id === itemId ? { ...item, notes } : item)
@@ -72,25 +71,54 @@ export class CartService {
     this.cartItems.set([]);
   }
 
+  // ✅ دالة توليد الرسالة (تم إصلاح الرموز والأرقام)
   generateWhatsAppLink(restaurantPhone: string): string {
     const items = this.cartItems();
     if (items.length === 0) return '';
 
-    let message = `*مرحباً، أود طلب ما يلي:*%0A%0A`;
+    // 1. التاريخ والوقت (بالإنكليزي en-GB ليظهر DD/MM/YYYY)
+    const date = new Date().toLocaleDateString('en-GB');
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+    // ملاحظة: نستخدم \n بدلاً من %0A هنا لأننا سنقوم بعمل encodeURIComponent لاحقاً
+    let message = `*🧾 طلب جديد من Syrian Menu Hub* \n`;
+    message += `📅 التاريخ: ${date} - ${time} \n`;
+    message += `ــــــــــــــــــــــــــــــــــــــــ\n`;
+
+    // 2. تفاصيل الطلبات
     items.forEach(item => {
-      const optionText = item.selectedOption ? ` [${item.selectedOption.name}]` : '';
-      // ✅ إضافة الملاحظة للرسالة إن وجدت
-      const notesText = item.notes ? `%0A   └ 📝 ملاحظة: ${item.notes}` : '';
+      // الكمية واسم الوجبة
+      message += `▪️ *${item.quantity}x ${item.name}*\n`;
 
-      message += `- ${item.quantity}x ${item.name}${optionText} (${item.price * item.quantity} ل.س)${notesText}%0A`;
+      // الخيار (إن وجد)
+      if (item.selectedOption) {
+        message += `   🔸 الحجم/النوع: ${item.selectedOption.name}\n`;
+      }
+
+      // الملاحظات (إن وجدت)
+      if (item.notes) {
+        message += `   📝 ملاحظة: ${item.notes}\n`;
+      }
+
+      // السعر (بالأرقام الإنكليزية)
+      const lineTotal = item.price * item.quantity;
+      message += `   💰 السعر: ${lineTotal.toLocaleString('en-US')} ل.س\n`;
+
+      message += `\n`;
     });
 
-    message += `%0A*------------------*`;
-    message += `%0A*المجموع الكلي: ${this.totalPrice()} ل.س*`;
-    message += `%0A*------------------*`;
-    message += `%0Aشكراً!`;
+    // 3. المجموع النهائي
+    message += `ــــــــــــــــــــــــــــــــــــــــ\n`;
+    message += `*💵 الإجمالي: ${this.totalPrice().toLocaleString('en-US')} ل.س* \n`;
+    message += `ــــــــــــــــــــــــــــــــــــــــ\n\n`;
 
-    return `https://wa.me/${restaurantPhone}?text=${message}`;
+    // 4. تذييل الرسالة
+
+    message += `شكراً! 🙏`;
+
+    // ✅ الخطوة السحرية: تشفير النص بالكامل ليظهر بشكل صحيح في الرابط
+    const encodedMessage = encodeURIComponent(message);
+
+    return `https://wa.me/${restaurantPhone}?text=${encodedMessage}`;
   }
 }

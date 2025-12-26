@@ -202,10 +202,9 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       @for (item of filteredItems(); track item.name; let i = $index) {
-      <div (click)="toggleItemExpansion(item)" [class.ring-2]="isItemExpanded(item)"
-        [class.ring-teal-500]="isItemExpanded(item)" [class.shadow-2xl]="isItemExpanded(item)"
-        class="bg-white rounded-xl shadow-md overflow-hidden transform hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in-up cursor-pointer group/item"
-        [style.animation-delay]="i * 50 + 'ms'">
+    <div (click)="toggleItemExpansion(item)" [class.ring-2]="isItemExpanded(item)"
+  class="bg-white rounded-xl shadow-md overflow-hidden transform hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-in-up cursor-pointer group/item"
+  [style.animation-delay]="i * 50 + 'ms'">
 
         <div class="flex items-center">
           <img alt="" [src]="item.image ? getImageURL(item.image) : 'assets/no-image.png'" [alt]="getItemName(item)"
