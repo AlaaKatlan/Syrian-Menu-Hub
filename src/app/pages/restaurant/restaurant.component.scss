@@ -29,6 +29,218 @@
   @apply flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300;
 }
 
+/* تأثير خاص لزر التوصيل النشط */
+.active-delivery {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+/* ============================================ */
+/* 🎨 أنيميشن أزرار الإضافة إلى السلة - خرافي! */
+/* ============================================ */
+
+/* تأثير الزر عند الضغط */
+button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  // تأثير الموجة البيضاء
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  &:active::before {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* تأثير الضغط على زر الإضافة */
+@keyframes button-press {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.85);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes button-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-8px) scale(1.05);
+  }
+  50% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(-4px) scale(1.02);
+  }
+}
+
+@keyframes button-rotate-3d {
+  0% {
+    transform: perspective(400px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(400px) rotateY(360deg);
+  }
+}
+
+@keyframes button-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-3deg); }
+  20%, 40%, 60%, 80% { transform: translateX(3px) rotate(3deg); }
+}
+
+@keyframes button-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(13, 148, 136, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(13, 148, 136, 0);
+  }
+}
+
+/* تطبيق الأنيميشن عند الضغط */
+.button-clicked {
+  animation:
+    button-press 0.3s ease,
+    button-bounce 0.6s ease 0.3s,
+    button-pulse 0.8s ease;
+
+  svg {
+    animation: button-rotate-3d 0.6s ease;
+  }
+}
+
+/* تأثيرات hover للأزرار */
+button:not(:disabled) {
+  &:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+      0 10px 25px rgba(13, 148, 136, 0.3),
+      0 0 20px rgba(13, 148, 136, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.95);
+  }
+}
+
+/* تأثير توهج النيون */
+@keyframes neon-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(13, 148, 136, 0.8))
+            drop-shadow(0 0 10px rgba(13, 148, 136, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(13, 148, 136, 1))
+            drop-shadow(0 0 25px rgba(13, 148, 136, 0.8));
+  }
+}
+
+button:hover svg {
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+/* تأثير التدرج المتحرك */
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+button.bg-teal-600 {
+  background: linear-gradient(
+    135deg,
+    #0d9488 0%,
+    #14b8a6 25%,
+    #2dd4bf 50%,
+    #14b8a6 75%,
+    #0d9488 100%
+  );
+  background-size: 200% 200%;
+
+  &:hover {
+    animation: gradient-flow 3s ease infinite;
+  }
+}
+
+/* تأثير الأيقونة الدوارة */
+@keyframes icon-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+button:hover svg {
+  animation: icon-spin 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* تأثير للأزرار الصغيرة (الخيارات) */
+button.text-teal-600 {
+  &:hover {
+    background: linear-gradient(135deg, #0d9488, #14b8a6);
+    color: white;
+    transform: scale(1.15) rotate(5deg);
+  }
+
+  &:active {
+    transform: scale(0.95) rotate(-5deg);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(45deg, #0d9488, #14b8a6);
+    opacity: 0;
+    z-index: -1;
+    animation: gradient-flow 2s ease infinite;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
 /* Animation for menu items and branches */
 @keyframes fadeInUp {
   from {
@@ -72,6 +284,51 @@ section {
   }
 }
 
+/* تأثير قوس قزح للزر عند الضغط */
+@keyframes rainbow-border {
+  0% { border-color: #0d9488; }
+  20% { border-color: #14b8a6; }
+  40% { border-color: #2dd4bf; }
+  60% { border-color: #5eead4; }
+  80% { border-color: #14b8a6; }
+  100% { border-color: #0d9488; }
+}
+
+.button-clicked {
+  border: 2px solid #0d9488;
+  animation: rainbow-border 1s ease infinite;
+}
+
+/* تأثير الضوء الساطع */
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transform: skewX(-25deg);
+}
+
+button:hover::after {
+  animation: shine 0.75s;
+}
+
 /* تحسينات للعرض على الشاشات الصغيرة */
 @media (max-width: 768px) {
   .container-fluid {
@@ -83,18 +340,16 @@ section {
     gap: 1rem;
   }
 
-  /* تقليل padding في بطاقات الأفرع على الموبايل */
   section .p-6 {
     padding: 1rem;
   }
 
-  /* تقليل حجم الأزرار على الموبايل */
   .social-link {
     @apply px-3 py-1.5 text-xs;
   }
 }
 
-/* تحسينات للطباعة (اختياري) */
+/* تحسينات للطباعة */
 @media print {
   .fixed {
     display: none !important;
@@ -129,13 +384,72 @@ html {
   scroll-behavior: smooth;
 }
 
-/* إزالة outline عند النقر للمستخدمين غير المتصفحين بالكيبورد */
+/* إزالة outline عند النقر */
 *:focus:not(:focus-visible) {
   outline: none;
 }
 
-/* تحسين الـ focus للمستخدمين بالكيبورد */
+/* تحسين الـ focus */
 *:focus-visible {
   outline: 2px solid #0d9488;
   outline-offset: 2px;
+}
+
+/* تأثير إضافي: موجة عند الضغط */
+@keyframes ripple-wave {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+button:active::before {
+  animation: ripple-wave 0.6s ease-out;
+}
+
+/* تأثير الظل الملون */
+@keyframes colored-shadow {
+  0%, 100% {
+    box-shadow: 0 5px 15px rgba(13, 148, 136, 0.4);
+  }
+  25% {
+    box-shadow: 0 5px 15px rgba(20, 184, 166, 0.6);
+  }
+  50% {
+    box-shadow: 0 5px 15px rgba(45, 212, 191, 0.8);
+  }
+  75% {
+    box-shadow: 0 5px 15px rgba(20, 184, 166, 0.6);
+  }
+}
+
+button:hover {
+  animation: colored-shadow 2s ease-in-out infinite;
+}
+
+/* تأثير الانزلاق */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+button {
+  // animation: slide-in 0.3s ease-out;
 }

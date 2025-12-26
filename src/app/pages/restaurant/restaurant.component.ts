@@ -28,25 +28,97 @@ export class RestaurantComponent {
   selectedCategory = signal<string>('');
   currentLanguage = signal<'ar' | 'en'>('ar');
   expandedItems = signal<Set<string>>(new Set());
+  deliveryMode = signal<boolean>(false);
 
   constructor() {
     effect(() => {
       console.log('🌐 اللغة الحالية:', this.currentLanguage());
       console.log(this.restaurant());
     });
+
+    window.addEventListener('resetDeliveryMode', () => {
+      this.deliveryMode.set(false);
+    });
   }
 
-  // ==================== دوال العربة (Cart) ====================
+  toggleDeliveryMode() {
+    this.deliveryMode.update(v => !v);
+    if (this.deliveryMode()) {
+
+      this.showDeliveryModeNotification();
+    }
+    this.cartService.clearCart();
+
+  }
+
+  private showDeliveryModeNotification() {
+    const toast = document.createElement('div');
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #34d399); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+          </svg>
+        </div>
+        <div>
+          <p style="font-weight: 700; color: #1f2937; margin: 0; font-size: 15px;">وضع التوصيل مفعّل! </p>
+          <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0 0;">يمكنك الآن إضافة الأصناف إلى سلتك</p>
+        </div>
+      </div>
+    `;
+
+    toast.style.cssText = `
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: white;
+      padding: 16px 20px;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      z-index: 10000;
+      animation: toast-slide-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      border: 2px solid #10b98120;
+      min-width: 300px;
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.animation = 'toast-slide-out 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
 
   addToCart(item: MenuItem, selectedOption?: any, event?: Event) {
     const isArabic = this.currentLanguage() === 'ar';
 
     if (event) {
-      this.animateFlyingItem(event);
+      const button = (event.target as HTMLElement).closest('button');
 
-      if ('vibrate' in navigator) {
-        navigator.vibrate([10, 5, 10]);
+      if (button) {
+        // 🎨 إضافة كلاسات الأنيميشن للزر
+        button.classList.add('button-clicked');
+
+        // إزالة الكلاس بعد انتهاء الأنيميشن
+        setTimeout(() => {
+          button.classList.remove('button-clicked');
+        }, 600);
+
+        // تأثير الاهتزاز
+        if ('vibrate' in navigator) {
+          navigator.vibrate([20, 10, 20]);
+        }
+
+        // 🎆 تأثير الجزيئات المتطايرة من الزر
+        this.createParticleExplosion(button);
+
+        // 🌟 تأثير النجوم المتطايرة
+        this.createStarBurst(button);
       }
+
+      // الأنيميشن الأصلي (السلة الطائرة)
+      this.animateFlyingItem(event);
     }
 
     const cartItem = {
@@ -62,6 +134,107 @@ export class RestaurantComponent {
     };
 
     this.cartService.addToCart(cartItem);
+  }
+
+  // 🎆 دالة إنشاء جزيئات متطايرة من الزر
+  private createParticleExplosion(button: HTMLElement) {
+    const rect = button.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    // إنشاء 15 جزيء
+    for (let i = 0; i < 15; i++) {
+      const particle = document.createElement('div');
+      const angle = (i / 15) * Math.PI * 2;
+      const distance = 60 + Math.random() * 40;
+      const size = 4 + Math.random() * 6;
+
+      // ألوان عشوائية جميلة
+      const colors = ['#0d9488', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      particle.style.cssText = `
+        position: fixed;
+        left: ${centerX}px;
+        top: ${centerY}px;
+        width: ${size}px;
+        height: ${size}px;
+        background: ${color};
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        box-shadow: 0 0 10px ${color};
+      `;
+
+      document.body.appendChild(particle);
+
+      // حساب الموقع النهائي
+      const endX = centerX + Math.cos(angle) * distance;
+      const endY = centerY + Math.sin(angle) * distance;
+
+      // أنيميشن الجزيء
+      particle.animate([
+        {
+          transform: 'translate(-50%, -50%) scale(1)',
+          opacity: 1
+        },
+        {
+          transform: `translate(${endX - centerX}px, ${endY - centerY}px) scale(0)`,
+          opacity: 0
+        }
+      ], {
+        duration: 800 + Math.random() * 400,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      });
+
+      setTimeout(() => particle.remove(), 1200);
+    }
+  }
+
+  // 🌟 دالة إنشاء نجوم متطايرة
+  private createStarBurst(button: HTMLElement) {
+    const rect = button.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    // إنشاء 8 نجوم
+    for (let i = 0; i < 8; i++) {
+      const star = document.createElement('div');
+      star.innerHTML = '';
+      const angle = (i / 8) * Math.PI * 2;
+      const distance = 50;
+
+      star.style.cssText = `
+        position: fixed;
+        left: ${centerX}px;
+        top: ${centerY}px;
+        font-size: 16px;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+      `;
+
+      document.body.appendChild(star);
+
+      const endX = centerX + Math.cos(angle) * distance;
+      const endY = centerY + Math.sin(angle) * distance;
+
+      star.animate([
+        {
+          transform: 'translate(-50%, -50%) scale(0) rotate(0deg)',
+          opacity: 1
+        },
+        {
+          transform: `translate(${endX - centerX}px, ${endY - centerY}px) scale(1.5) rotate(180deg)`,
+          opacity: 0
+        }
+      ], {
+        duration: 1000,
+        easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)'
+      });
+
+      setTimeout(() => star.remove(), 1000);
+    }
   }
 
   animateFlyingItem(event: Event) {
@@ -220,7 +393,7 @@ export class RestaurantComponent {
 
           setTimeout(() => ripple.remove(), 600);
 
-          this.showToastNotification();
+          // this.showToastNotification();
         }, 800);
       }, 50);
     }
@@ -235,13 +408,13 @@ export class RestaurantComponent {
     const toast = document.createElement('div');
     toast.innerHTML = `
       <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f97316, #fb923c); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: toast-icon-bounce 0.5s ease;">
+        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #f97316, #fb923c); border-radius: 50%; display: flex; align-items: center; justify-center; animation: toast-icon-bounce 0.5s ease;">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
         <div>
-          <p style="font-weight: 700; color: #1f2937; margin: 0; font-size: 15px;">تمت الإضافة بنجاح! ✨</p>
+          <p style="font-weight: 700; color: #1f2937; margin: 0; font-size: 15px;">تمت الإضافة بنجاح!</p>
           <p style="font-size: 13px; color: #6b7280; margin: 4px 0 0 0;">تم إضافة المنتج إلى سلتك</p>
         </div>
       </div>
@@ -302,11 +475,7 @@ export class RestaurantComponent {
     if (!data?.menu?.items || data.menu.items.length === 0) {
       return false;
     }
-
-    const hasEn = data.menu.items.some(item =>
-      item.name_en && item.name_en.trim() !== ''
-    );
-    return hasEn;
+    return data.menu.items.some(item => item.name_en && item.name_en.trim() !== '');
   });
 
   displayCategories = computed(() => {
